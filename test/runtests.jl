@@ -40,6 +40,22 @@ KNOWN_ERRORS = Dict(
         @test split(render(c), '\n')[3] == "│╶───────╴│"
     end
 
+    @testset "insert and clear" begin
+        c = parse_text("╶───┤ ab cd")
+        insertcols!(c, 3, 2)
+        @test render(c) == "╶─────┤ ab cd"
+        c = parse_text("ab cd")
+        insertcols!(c, 2, 2)
+        @test render(c) == "ab cd"
+        c = parse_text("│\n┴")
+        insertrows!(c, 2, 1)
+        @test render(c) == "│\n│\n┴"
+        c = Canvas()
+        hline!(c, 1, 10, 2; cap=:full)
+        box!(c, 4, 1; label="LV", pad=0, clear=true)
+        @test render(c) == "   ┌──┐\n───┤LV├───\n   └──┘"
+    end
+
     @testset "lint" begin
         @test isempty(lint("╶─┬─╴\n  │\n  ╵"))
         # a leader one column off: the `│` runs into the fraction bar

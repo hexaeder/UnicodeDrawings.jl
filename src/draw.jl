@@ -150,21 +150,28 @@ Base.propertynames(::Box) = (:x, :y, :w, :h, :left, :right, :top, :bottom, :cx, 
 
 """
     box!(c, x, y, w=nothing, h=nothing; label="", line=:light, dash=nothing,
-         align=:center, valign=:middle, pad=1, over=false) -> Box
+         align=:center, valign=:middle, pad=1, over=false, clear=false) -> Box
 
 A box with its top left corner at `(x, y)`. Without `w` and `h` it is sized around the label,
 with `pad` spaces on either side. The label may have several lines; `align=:left` puts it `pad`
 columns in from the left edge.
 
-Edges join with strokes already on the canvas, like a wire does.
+Edges join with strokes already on the canvas, like a wire does. With `clear=true` the box
+first empties its rectangle, then joins its edges to every stroke that points at it from
+outside. That drops a box onto an existing wire, which is how to insert a block into a chain.
 """
 function box!(c::Canvas, x, y, w=nothing, h=nothing; label="", line=:light, dash=nothing,
-              align=:center, valign=:middle, pad=1, over=false)
+              align=:center, valign=:middle, pad=1, over=false, clear=false)
     lines = isempty(label) ? String[] : split(label, '\n')
     tw = maximum(textwidth, lines; init=0)
     w = something(w, tw + 2 + 2pad)
     h = something(h, length(lines) + 2)
     b = Box(x, y, w, h)
+    if clear
+        for yy in b.top:b.bottom, xx in b.left:b.right
+            delete!(c.cells, (xx, yy))
+        end
+    end
     wire!(c, (b.left, b.top), (b.right, b.top), (b.right, b.bottom), (b.left, b.bottom), (b.left, b.top);
           line, dash, over)
     innerw, innerh = w - 2, h - 2
@@ -175,6 +182,20 @@ function box!(c::Canvas, x, y, w=nothing, h=nothing; label="", line=:light, dash
         xl = align === :left ? b.left + 1 + pad : align === :center ? b.left + 1 + (innerw - lw) ÷ 2 :
              align === :right ? b.right - pad - lw : error("unknown align $(repr(align))")
         puttext!(c, xl, ytop + i - 1, l)
+    end
+    if clear
+        weight, style = linestyle(line, dash)
+        edge = [((xx, b.top), N) for xx in b.left:b.right]
+        append!(edge, ((xx, b.bottom), S) for xx in b.left:b.right)
+        append!(edge, ((b.left, yy), W) for yy in b.top:b.bottom)
+        append!(edge, ((b.right, yy), E) for yy in b.top:b.bottom)
+        for ((xx, yy), d) in edge
+            dx, dy = OFFSETS[d]
+            nb = c[xx + dx, yy + dy]
+            if isstroke(nb) && nb.arms[opposite(d)] != NONE
+                addarms!(c, xx, yy, setarm(Arms(), d, nb.arms[opposite(d)]); style)
+            end
+        end
     end
     b
 end
@@ -189,4 +210,49 @@ function tf!(c::Canvas, x, y, num, den; line=:round, pad=1)
     b = box!(c, x, y - 2; label="$num\n\n$den", line, pad)
     hline!(c, b.left + 1, b.right - 1, y)
     b
+end
+
+"""
+    insertcols!(c, x, n)
+    insertrows!(c, y, n)
+
+Open a gap of `n` columns before column `x` (or `n` rows before row `y`). Everything from there
+on moves over, and strokes that cross the gap are stretched, so wires stay connected. Meant for
+inserting something into the middle of a finished drawing, such as an imported diagram.
+"""
+insertcols!(c::Canvas, x, n) = _insert!(c, x, n, E)
+insertrows!(c::Canvas, y, n) = _insert!(c, y, n, S)
+
+function _insert!(c::Canvas, at, n, d)
+    k = d == E ? 1 : 2                        # the coordinate that moves
+    shifted(p) = p[k] >= at ? (d == E ? (p[1] + n, p[2]) : (p[1], p[2] + n)) : p
+    # a phrase that straddles the cut stays in one piece where it is
+    keep = Set{Tuple{Int,Int}}()
+    for (p, cell) in c.cells
+        (istext(cell) && p[k] == at - 1) || continue
+        step1(q, s) = d == E ? (q[1] + s, q[2]) : (q[1], q[2] + s)
+        run, q = Tuple{Int,Int}[], step1(p, 1)
+        while istext(c[q...]) || (!isstroke(c[q...]) && istext(c[step1(q, 1)...]) && d == E)
+            push!(run, q)
+            q = step1(q, 1)
+        end
+        union!(keep, run)
+    end
+    moved = Dict((p in keep ? p : shifted(p)) => cell for (p, cell) in c.cells)
+    others = unique(p[3-k] for p in keys(c.cells))
+    for o in others
+        pos(i) = k == 1 ? (i, o) : (o, i)
+        l, r = c[pos(at - 1)...], c[pos(at)...]
+        lw = isstroke(l) ? l.arms[d] : istext(l) && isstroke(c[pos(at - 2)...]) ? c[pos(at - 2)...].arms[d] : NONE
+        rw = isstroke(r) ? r.arms[opposite(d)] : istext(r) && isstroke(c[pos(at + 1)...]) ? c[pos(at + 1)...].arms[opposite(d)] : NONE
+        (lw != NONE && lw == rw) || continue
+        style = isstroke(l) && l.style in (DASH2, DASH3, DASH4) ? l.style : SOLID
+        arms = d == E ? Arms(NONE, lw, NONE, lw) : Arms(lw, NONE, lw, NONE)
+        for j in 0:n-1
+            moved[pos(at + j)] = Cell(arms, style, "")
+        end
+    end
+    empty!(c.cells)
+    merge!(c.cells, moved)
+    c
 end

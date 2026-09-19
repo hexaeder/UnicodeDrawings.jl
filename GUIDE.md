@@ -28,11 +28,22 @@ Diagrams live in docstrings and markdown; there is no scene file to keep. To cha
    recognised, and whatever isn't ends up as per-cell fix-ups at the bottom.
 2. Edit the scene. Wire ends on a box and text next to a box are written relative to it
    (`tf.right + 2`), so they move when the box grows. Everything else has plain coordinates.
-   After a change that shifts a whole region, expect to move the rest by hand; a collision
-   error shows you the canvas as far as it got.
+   To make room for something new, don't shift coordinates by hand. Append to the end of the
+   scene instead:
+   ```julia
+   insertcols!(c, lim.left, 6)    # 6 empty columns before `lim`; crossing wires stretch
+   lv = box!(c, lim.left + 1, lim.top; label="LV", pad=0, clear=true)   # drops onto the wire: ┤LV├
+   ```
+   `insertrows!` does the same for rows. After an insert, box variables still hold their old
+   position, so for anything right of the cut add the inserted width yourself.
+   `box!(…; clear=true)` empties its rectangle and joins its edges to whatever points at it.
 3. `bin/udraw put scene.jl` renders the scene and replaces the block in the original file. It
-   refuses if the block was changed by hand since the import; import again then. The scene
-   can be edited and put again as often as you like, and thrown away afterwards.
+   refuses if the block was changed by hand since the import; import again then. Keep the
+   `# udraw:` first line intact, it says where the block is. The scene can be edited and put
+   again as often as you like, and thrown away afterwards.
+
+`udraw lint src/Model.jl` checks every diagram block in the file. The lint line ends with the
+size, like `96×15`, so a width limit is easy to check. `pad=0` on a box saves two columns.
 
 For a one-character fix, editing the text directly and running `udraw lint` is quicker.
 

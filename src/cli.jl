@@ -8,7 +8,8 @@ usage: udraw render <scene.jl> [--ruler] [-o <out.txt>]
 
 A scene is a Julia file whose last value is a Canvas. `render` prints the diagram and reports
 lint issues on stderr. A diagram file may be plain text or contain a ``` fenced block, in which
-case the first block is used. `-` reads from stdin. Exit status is 1 if lint finds errors.
+case the first block is used. `-` reads from stdin. `lint` on a source or markdown file checks every diagram block in it.
+Exit status is 1 if lint finds errors.
 
 `import` turns the diagram block at <line> of a file (a docstring, a markdown file, a plain
 diagram) into a scene. `put` renders that scene and writes it back into the same block.
@@ -50,17 +51,41 @@ function fenced(str)
     join(lines[i+1:j-1], '\n')
 end
 
+# A scene is a Julia file that makes a Canvas; any other file holds finished diagrams.
+isscene(path) = endswith(path, ".jl") && occursin("Canvas()", read(path, String))
+
 # The diagram text for a scene (rendered) or a text file (as is).
 function diagram(path)
-    endswith(path, ".jl") && return render(runscene(path))
+    isscene(path) && return render(runscene(path))
     fenced(path == "-" ? read(stdin, String) : read(path, String))
 end
 
-function report(str)
-    issues = lintreport(stderr, str)
+function report(str; io=stderr, name="lint")
+    issues = lintreport(io, str)
     nerr = count(i -> i.level == :error, issues)
-    println(stderr, "lint: $nerr errors, $(length(issues) - nerr) warnings")
+    lines = split(str, '\n')
+    size = "$(maximum(textwidth, lines; init=0))×$(length(lines))"
+    println(io, "$name: $nerr errors, $(length(issues) - nerr) warnings, $size")
     nerr == 0 ? 0 : 1
+end
+
+# Every diagram block of a source file, with issues reported at their line in the file.
+function lint_file(path)
+    lines = readlines(path)
+    status = 0
+    for b in diagram_blocks(lines)
+        str = blocktext(lines, b)
+        buf = IOBuffer()
+        status = max(status, report(str; io=buf, name="$path:$(b[1])"))
+        out = String(take!(buf))
+        # issue positions are block-relative; shift them to file lines
+        out = replace(out, r"^(\d+):(\d+):"m => m -> begin
+            y, x = parse.(Int, split(m[1:end-1], ':'))
+            "$path:$(y + b[1]):$(x + length(b[3])):"
+        end)
+        print(stderr, out)
+    end
+    status
 end
 
 function (@main)(args)
@@ -100,7 +125,8 @@ function (@main)(args)
         println(stderr, "wrote $path:$line")
         return report(new)
     elseif cmd == "lint" && length(rest) == 1
-        return report(diagram(rest[1]))
+        path = rest[1]
+        return path == "-" || isscene(path) ? report(diagram(path)) : lint_file(path)
     elseif cmd == "ruler" && length(rest) == 1
         ruler(stdout, diagram(rest[1]))
     elseif cmd == "locate" && length(rest) == 2

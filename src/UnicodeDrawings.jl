@@ -1,7 +1,8 @@
 module UnicodeDrawings
 
 export Canvas, render, parse_text, lint, lintreport, ruler, locate
-export box!, tf!, wire!, hline!, vline!, stroke!, erase!, text!, mark!, arrow!
+export box!, tf!, wire!, hline!, vline!, stroke!, erase!, text!, mark!, arrow!,
+       insertcols!, insertrows!
 
 include("glyphs.jl")
 include("canvas.jl")
