@@ -1,0 +1,6 @@
+[deps]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+UnicodeDrawings = "86195ca4-a416-4d0d-bdf0-e07ea36c7c37"
+
+[sources]
+UnicodeDrawings = {path = ".."}

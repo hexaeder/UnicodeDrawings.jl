@@ -1,0 +1,17 @@
+# CompositeInjector: a terminal wire crosses the outer box edge and joins it as `┼`.
+c = Canvas()
+outer = box!(c, 5, 1, 38, 11; label="CompositeInjector", align=:left, valign=:top)
+gen = box!(c, 10, 4; label="Generator")
+ctrl = box!(c, 26, 4; label="Controller")
+load = box!(c, 10, 8; label="Load")
+wire!(c, (gen.cx + 4, gen.top), (gen.cx + 4, 3), (ctrl.left + 2, 3), (ctrl.left + 2, ctrl.top))
+wire!(c, (gen.cx + 4, gen.bottom), (gen.cx + 4, 7), (ctrl.left + 2, 7), (ctrl.left + 2, ctrl.bottom))
+arrow!(c, 24, 3, :right); arrow!(c, 24, 7, :left)
+text!(c, 30, 3, "measurements"); text!(c, 30, 7, "actuation")
+vline!(c, 8, gen.cy, load.cy)
+wire!(c, (8, gen.cy), (gen.left, gen.cy))
+wire!(c, (8, load.cy), (load.left, load.cy))
+wire!(c, (2, 6), (8, 6))
+mark!(c, 8, gen.cy, "o"); mark!(c, 8, load.cy, "o"); mark!(c, 2, 6, "o")
+text!(c, 1, 5, "(t)")
+c
