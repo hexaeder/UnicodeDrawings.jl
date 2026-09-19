@@ -1,0 +1,8 @@
+# source: PowerDynamicsLibrary/src/building_blocks/basic_blocks.jl:152-158
+```asciiart
+        ╭─────╮
+     in │  sT │ out
+    ╶───┤╶───╴├────╴
+        │ 1+sT│
+        ╰─────╯
+```

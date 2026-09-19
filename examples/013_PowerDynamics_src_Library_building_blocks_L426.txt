@@ -1,0 +1,11 @@
+# source: PowerDynamics/src/Library/building_blocks.jl:426-435
+```asciiart
+              __ outMax
+             /
+      ╭─────────╮
+   in │    K    │ out
+  ╶───┤╶───────╴├────╴
+      │ 1 + s T │
+      ╰─────────╯
+outMin __/
+```

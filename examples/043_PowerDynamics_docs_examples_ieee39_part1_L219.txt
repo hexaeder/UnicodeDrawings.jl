@@ -1,0 +1,6 @@
+# source: PowerDynamics/docs/examples/ieee39_part1.jl:219-223
+```asciiart
+(t) ┌─────────┐
+ o──┤ Machine │
+    └─────────┘
+```

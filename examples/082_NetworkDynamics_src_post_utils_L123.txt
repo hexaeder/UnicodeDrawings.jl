@@ -1,0 +1,9 @@
+# source: NetworkDynamics/src/post_utils.jl:123-130
+```asciiart
+       ┊
+    ┄┄┄◯   ● injector 1
+      ╱ ╲ ╱
+   ┄┄◯╶─╴◯╶─╴● injector 2
+     ┊    ╲
+           ● injector 3
+```

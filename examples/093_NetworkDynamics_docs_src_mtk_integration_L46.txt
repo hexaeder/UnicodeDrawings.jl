@@ -1,0 +1,10 @@
+# source: NetworkDynamics/docs/src/mtk_integration.md:46-54
+```
+
+ideal v source      Resistor     Capacitor
+            v1 o─←────MMM────→─o v2
+               │               ┴
+              (↗)              ┬
+               │               │
+               ⏚               ⏚
+```

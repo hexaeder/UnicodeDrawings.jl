@@ -1,0 +1,6 @@
+# source: NetworkDynamics/docs/src/mathematical_model.md:157-161
+```
+          y_src ┌───────────────────┐ y_dst
+  V_src o───←───┤ internal dynamics ├───→───o V_dst
+                └───────────────────┘
+```

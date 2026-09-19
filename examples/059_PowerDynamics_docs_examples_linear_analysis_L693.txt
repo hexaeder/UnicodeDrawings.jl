@@ -1,0 +1,4 @@
+# source: PowerDynamics/docs/examples/linear_analysis.jl:693-695
+- **`Zbus`**: the bus impedance (shunt vertices). Maps summed current injections → bus voltages.
+- **`Ynw`**: the network admittance (all transmission lines). Maps bus voltages → current injections.
+- **`Yinj`**: the injector admittance (device models connected via [`LoopbackConnection`](@extref NetworkDynamics.LoopbackConnection)). Maps bus voltages → current injections.

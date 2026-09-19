@@ -1,0 +1,8 @@
+# source: PowerDynamics/docs/examples/zero_imp_breaker.jl:38-44
+```asciiart
+G1 (~)─╂──╮J1 ╭───╂─▷ L1
+         ╺┷━┯━┷╸
+            │ Breaker
+         ╺┯━┷━┯╸
+G2 (~)─╂──╯J2 ╰───╂─▷ L2
+```

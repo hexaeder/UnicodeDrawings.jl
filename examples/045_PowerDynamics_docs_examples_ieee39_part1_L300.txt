@@ -1,0 +1,12 @@
+# source: PowerDynamics/docs/examples/ieee39_part1.jl:300-310
+```asciiart
+           ╔══════════════════════╗
+           ║ Junction (compiled)  ║
+ Network   ║  ┌─────────────────┐ ║
+interface  ║  │MTKBus           │ ║
+ current ────→│┌──────┐         │ ║
+           ║  ││BusBar│(nothing)│ ║
+ voltage ←────│└──────┘         │ ║
+           ║  └─────────────────┘ ║
+           ╚══════════════════════╝
+```

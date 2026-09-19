@@ -1,0 +1,6 @@
+# source: PowerDynamics/docs/src/ModelingConcepts.md:166-170
+```asciiart
+(src) ┌──────────┐ (dst)
+  o←──┤  Branch  ├──→o
+      └──────────┘
+```

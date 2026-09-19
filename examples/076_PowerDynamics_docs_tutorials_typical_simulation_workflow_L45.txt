@@ -1,0 +1,6 @@
+# source: PowerDynamics/docs/tutorials/typical_simulation_workflow.jl:45-49
+```asciiart
+(t) ┌────────────────┐
+ o──┤ Droop Inverter │
+    └────────────────┘
+```

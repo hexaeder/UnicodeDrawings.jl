@@ -1,0 +1,12 @@
+# source: PowerDynamics/docs/examples/linear_analysis.jl:396-406
+```asciiart
+             (Admittance-like)
+            ╭────────────────╮
+δu_dq╶─→●──→┤ Device TF G(s) ├→───●──╴ i_dq
+        │   ╰────────────────╯    │
+        │                         │
+        │   ╭────────────────╮    │
+(bus    ╰──←┤  Grid TF Z(s)  ├←───╯
+ voltage)   ╰────────────────╯
+             (Impedance-like)
+```

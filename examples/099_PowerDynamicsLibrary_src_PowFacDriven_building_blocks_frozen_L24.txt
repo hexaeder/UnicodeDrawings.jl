@@ -1,0 +1,11 @@
+# source: PowerDynamicsLibrary/src/PowFacDriven/building_blocks_frozen.jl:24-33
+```asciiart
+                  __ outMax
+                 /
+        ╭───────────╮
+     in │ Kp + Ki/s │ out
+    ╶───┤╶─────────╴├────╴
+        │           │
+        ╰───────────╯
+    outMin __/
+```

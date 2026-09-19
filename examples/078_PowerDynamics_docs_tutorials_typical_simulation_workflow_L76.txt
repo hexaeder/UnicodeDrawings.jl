@@ -1,0 +1,12 @@
+# source: PowerDynamics/docs/tutorials/typical_simulation_workflow.jl:76-86
+```asciiart
+           ╔════════════════════════════════╗
+ Network   ║ VertexModel (compiled)         ║
+interface  ║  ┌───────────────────────────┐ ║
+           ║  │BusModel                   │ ║
+ current ────→│┌──────┐ ┌────────────────┐│ ║
+           ║  ││BusBar├o┤ Droop inverter ││ ║
+ voltage ←────│└──────┘ └────────────────┘│ ║
+           ║  └───────────────────────────┘ ║
+           ╚════════════════════════════════╝
+```

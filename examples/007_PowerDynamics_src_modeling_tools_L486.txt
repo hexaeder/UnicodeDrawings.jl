@@ -1,0 +1,14 @@
+# source: PowerDynamics/src/modeling_tools.jl:486-498
+```asciiart
+    ┌────────────────────────────────────┐
+    │ CompositeInjector                  │
+    │              ╭───→───╮ measurements│
+    │    ┌─────────┴─┐   ┌─┴──────────┐  │
+(t) │  o─┤ Generator │   │ Controller │  │
+ o──┼──┤ └─────────┬─┘   └─┬──────────┘  │
+    │  │           ╰───←───╯ actuation   │
+    │  │ ┌──────┐                        │
+    │  o─┤ Load │                        │
+    │    └──────┘                        │
+    └────────────────────────────────────┘
+```

@@ -1,0 +1,15 @@
+# source: PowerDynamics/docs/examples/ieee39_part1.jl:408-421
+```asciiart
+            ╔════════════════════════════════╗
+            ║ Unctr. Ma. Load Bus (compiled) ║
+            ║  ┌────────────────────────┐    ║
+  Network   ║  │MTKBus      ┌─────────┐ │    ║
+ interface  ║  │          ┌─┤ Machine │ │    ║
+  current ────→│ ┌──────┐ │ └─────────┘ │    ║
+            ║  │ │BusBar├─o             │    ║
+  voltage ←────│ └──────┘ │ ┌──────┐    │    ║
+            ║  │          └─┤ Load │    │    ║
+            ║  │            └──────┘    │    ║
+            ║  └────────────────────────┘    ║
+            ╚════════════════════════════════╝
+```

@@ -1,0 +1,8 @@
+# source: PowerDynamics/docs/examples/ieee39_part4.jl:110-116
+```asciiart
+      ┌──────────────────────────┐
+(t)   │                          │
+ o←───┤ Droop Inverter Equations │
+      │                          │
+      └──────────────────────────┘
+```

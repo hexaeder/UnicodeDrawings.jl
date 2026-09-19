@@ -1,0 +1,6 @@
+# source: PowerDynamics/src/interfaces.jl:17-21
+```asciiart
+   (t)    ┌──────────┐
+    o─────┤ Injector │
+:terminal └──────────┘
+```

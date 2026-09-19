@@ -1,0 +1,15 @@
+# source: PowerDynamics/docs/examples/linear_analysis.jl:419-432
+```asciiart
+               ╭────────────────┬───────────╮
+        δu_in →∙        δu_out →∙           ∙← δu_in
+        (line) │         (hub)  │           │ (device)
+┏━━━━━━━━━━━━━━▽━━┓   ╔═════════△════════╗  │   ╔═══════════════╗
+┃ Rest of Network ┃   ║ Shunt-Model      ║  ╰───▷ Device-Model  ║
+┃ - voltage in    ┃   ║ - current sum in ║      ║ - voltage in  ║
+┃ - current out   ┃   ║ - voltage out    ║  ╭───◁ - current out ║
+┗━━━━━━━━━━━━━━▽━━┛   ╚═════════△════════╝  │   ╚═══════════════╝
+       δi_out →∙        δi_out →∙           ∙← δi_out
+       (line)  │        (hub) ╭─┴─╮         │ (device)
+               ╰──────────────▷ + ◁─────────╯
+                              ╰───╯
+```

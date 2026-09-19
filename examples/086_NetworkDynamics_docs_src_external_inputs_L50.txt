@@ -1,0 +1,9 @@
+# source: NetworkDynamics/docs/src/external_inputs.md:50-57
+```
+
+                  v1    Resistor   v2
+PI controlled   ─→─o─←────MMM────→─o─→─ time dependent 
+current source     ┴               ┴    current sink
+                   ┬               ┬
+                   ⏚               ⏚
+```

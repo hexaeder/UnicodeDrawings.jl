@@ -1,0 +1,15 @@
+# source: PowerDynamics/docs/src/vs_and_cs_models.md:166-179
+```asciiart
+                         △
+        ╭────────────────┼────────────╮
+        │        voltage │ u out      │
+  ━━━━━━▽━━┓   ╔═════════△═════════╗  │  ┏━━━━━━━┓   ╔═══════════════════╗
+   normal  ┃   ║ V-Source (hub)    ║  ╰──▷┄┄┄┄┄┄┄▷───▷ Current-Source    ║
+  EdgeModel┃   ║ ẋ = f(x, i, p, t) ║     ┃       ┃   ║ ẋ = f(x, u, p, t) ║
+           ┃   ║ u = g(x, p, t)    ║  ╭──◁┄×(-1)┄◁───◁ i = g(x, u, p, t) ║
+  ━━━━━━▽━━┛   ╚═════════△═════════╝  │  ┗━━━━━━━┛   ╚═══════════════════╝
+current │ i out        ╭─┴─╮          │  special      ⋅ flipped interface:
+        ╰──────────────▷ + ◁──────────╯  "Loopback"     ▷ potential u in
+         (aggregation) ╰─△─╯             EdgeModel      ◁ flow i out
+                         │                            ⋅ feedforward allowed
+```

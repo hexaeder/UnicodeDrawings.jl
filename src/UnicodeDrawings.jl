@@ -1,0 +1,3 @@
+module UnicodeDrawings
+
+end # module

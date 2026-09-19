@@ -1,0 +1,8 @@
+# source: PowerDynamics/docs/src/julia_pkgbasics.md:50-56
+```asciiart
+    SomePackage@1.2.4
+                ╷ ╷ ╷
+                │ │ ╰───╴ Patch — small non-breaking fix
+                │ ╰─────╴ Minor — non-breaking new feature
+                ╰───────╴ Major — breaking change
+```

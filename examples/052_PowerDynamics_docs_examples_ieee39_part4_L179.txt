@@ -1,0 +1,12 @@
+# source: PowerDynamics/docs/examples/ieee39_part4.jl:179-189
+```asciiart
+           ╔═════════════════════════╗
+           ║ Droop (compiled)        ║
+ Network   ║  ┌────────────────────┐ ║
+interface  ║  │ MTKBus             │ ║
+ current ────→│┌──────┐ ┌────────┐ │ ║
+           ║  ││BusBar├o┤Inverter│ │ ║
+ voltage ←────│└──────┘ └────────┘ │ ║
+           ║  └────────────────────┘ ║
+           ╚═════════════════════════╝
+```

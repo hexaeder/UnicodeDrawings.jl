@@ -1,0 +1,6 @@
+# source: PowerDynamics/docs/src/ModelingConcepts.md:65-69
+```asciiart
+(t)   ┌──────────┐
+ o←───┤ Injector │
+      └──────────┘
+```

@@ -1,0 +1,9 @@
+# source: PowerDynamics/docs/tutorials/getting_started.jl:88-95
+```asciiart
+                    ω,θ
+                     ⤺
+Turbine Power  Pₘ  🭃▄▄▄🭎  Pₑ  Electrical Power
+               ─→  🭔▀▀▀🭟  ─→
+                     H
+
+```

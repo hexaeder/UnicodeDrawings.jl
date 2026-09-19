@@ -1,0 +1,6 @@
+# source: PowerDynamics/src/interfaces.jl:150-154
+```asciiart
+ (t) ┌────────┐ (t)
+  o──┤ Branch ├──o
+:src └────────┘ :dst
+```

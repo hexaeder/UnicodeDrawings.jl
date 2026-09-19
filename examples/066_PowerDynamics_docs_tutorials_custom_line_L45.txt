@@ -1,0 +1,12 @@
+# source: PowerDynamics/docs/tutorials/custom_line.jl:45-55
+```asciiart
+              i_src  V₁   i_a   Vₘ   i_b   V₂  i_dst
+     V_src o────←────o───Z_a─→──o───Z_b─→──o────→────o V_dst
+              r_src  │          │          │   r_dst
+                     ↓ i₁       ↓ i_f   i₂ ↓
+                     ┴          ┴          ┴
+Y_src = G_src+jB_src ┬          ┬ Y_f      ┬  Y_dst = G_dst+jB_dst
+                     │          │          │
+                     ⏚          ⏚          ⏚
+                   (fault enabled by breaker)
+```

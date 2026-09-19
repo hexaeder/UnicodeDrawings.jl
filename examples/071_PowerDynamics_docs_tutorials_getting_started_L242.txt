@@ -1,0 +1,7 @@
+# source: PowerDynamics/docs/tutorials/getting_started.jl:242-247
+```asciiart
+        bus 1          bus 2
+          ╻              ╻
+  (═)╶────╂──────────────╂───╴(~)
+swing-eqs ╹   pi-line    ╹ slack/infinite bus
+```
