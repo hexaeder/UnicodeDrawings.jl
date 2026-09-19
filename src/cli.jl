@@ -22,6 +22,21 @@ function runscene(path)
     c
 end
 
+# A failing scene is reported as its message plus the scene lines that led there, not as a
+# full stacktrace, followed by what was drawn up to that point.
+function scene_error(path, err)
+    e = err isa LoadError ? err.error : err
+    println(stderr, "error: ", sprint(showerror, e))
+    for fr in stacktrace(catch_backtrace())
+        String(fr.file) == abspath(path) && println(stderr, "  at $(path):$(fr.line)")
+    end
+    if LAST_CANVAS[] isa Canvas
+        println(stderr, "drawn so far:")
+        ruler(stderr, render(LAST_CANVAS[]))
+    end
+    1
+end
+
 function fenced(str)
     lines = split(str, '\n')
     i = findfirst(startswith("```"), lines)
@@ -39,7 +54,7 @@ end
 function report(str)
     issues = lintreport(stderr, str)
     nerr = count(i -> i.level == :error, issues)
-    isempty(issues) || println(stderr, "$nerr errors, $(length(issues) - nerr) warnings")
+    println(stderr, "lint: $nerr errors, $(length(issues) - nerr) warnings")
     nerr == 0 ? 0 : 1
 end
 
@@ -48,7 +63,11 @@ function (@main)(args)
     cmd, rest = args[1], args[2:end]
     if cmd == "render" && !isempty(rest)
         out = findfirst(==("-o"), rest)
-        str = render(runscene(rest[1]))
+        str = try
+            render(runscene(rest[1]))
+        catch err
+            return scene_error(rest[1], err)
+        end
         if "--ruler" in rest
             ruler(stdout, str)
         elseif isnothing(out)

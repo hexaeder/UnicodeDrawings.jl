@@ -54,3 +54,6 @@ to make the column arithmetic explicit and let tools check it.
    description, and check that the renderer reproduces them exactly. The primitives needed for
    that are the primitive set. The skill/agent spec then becomes the DSL, the style conventions
    visible in the examples, and a few worked scene/output pairs.
+
+`designs/` holds new diagrams drawn with the tool for PowerDynamicsLibrary controllers
+(IEEE AC1C exciter, DEGOV1 governor).

@@ -1,7 +1,7 @@
 module UnicodeDrawings
 
 export Canvas, render, parse_text, lint, lintreport, ruler, locate
-export box!, wire!, hline!, vline!, stroke!, text!, mark!, arrow!
+export box!, tf!, wire!, hline!, vline!, stroke!, text!, mark!, arrow!
 
 include("glyphs.jl")
 include("canvas.jl")
@@ -15,6 +15,7 @@ Base.show(io::IO, ::MIME"text/plain", c::Canvas) = print(io, render(c))
 if ccall(:jl_generating_output, Cint, ()) == 1
     let c = Canvas()
         b = box!(c, 5, 1; label="K\n\n1 + s T", line=:round)
+        tf!(c, 40, 3, "1", "s T")
         box!(c, 20, 1, 8, 5; label="A", line=:heavy, align=:left, valign=:top)
         box!(c, 30, 1; label="B", line=:double)
         hline!(c, b.left + 1, b.right - 1, b.cy)

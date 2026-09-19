@@ -23,7 +23,9 @@ counted downwards. Strokes drawn onto the same cell merge their arms.
 struct Canvas
     cells::Dict{Tuple{Int,Int},Cell}
 end
-Canvas() = Canvas(Dict{Tuple{Int,Int},Cell}())
+# The CLI shows the newest canvas when a scene fails halfway.
+const LAST_CANVAS = Ref{Any}(nothing)
+Canvas() = LAST_CANVAS[] = Canvas(Dict{Tuple{Int,Int},Cell}())
 
 Base.getindex(c::Canvas, x::Integer, y::Integer) = get(c.cells, (x, y), BLANK)
 

@@ -33,6 +33,13 @@ KNOWN_ERRORS = Dict(
         @test render(c) == "┏━┯━┓\n┃ │ ┃\n┗━┷━┛"
     end
 
+    @testset "tf!" begin
+        c = Canvas()
+        b = tf!(c, 1, 3, "K", "1 + s T")
+        @test (b.left, b.right, b.top, b.bottom) == (1, 11, 1, 5)
+        @test split(render(c), '\n')[3] == "│╶───────╴│"
+    end
+
     @testset "lint" begin
         @test isempty(lint("╶─┬─╴\n  │\n  ╵"))
         # a leader one column off: the `│` runs into the fraction bar

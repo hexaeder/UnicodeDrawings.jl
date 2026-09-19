@@ -7,7 +7,9 @@ strokes into the right junctions and checks the result.
 ## Workflow
 
 1. Write `scene.jl`: `c = Canvas()`, then the primitives, and end the file with `c`.
-2. Run `bin/udraw render scene.jl`. It prints the diagram and lists lint issues on stderr.
+2. Run `bin/udraw render scene.jl` (or `-o out.txt` to write a file). It prints the diagram,
+   then lint issues and a `lint: N errors, M warnings` line on stderr. If the scene fails,
+   for example on a collision, you get the message, the scene line and the canvas drawn so far.
 3. To fix placement, `udraw render scene.jl --ruler` shows column and row numbers, and
    `udraw locate out.txt '┤'` gives the exact `x y` of each match. Use `locate`, not the
    ruler, when you need a column number. Counting columns off the ruler is easy to get wrong.
@@ -20,13 +22,19 @@ fence, only the first fenced block is checked.
 
 `x` is the column and `y` the row, both starting at 1, with `y` counting downwards. Take
 positions from boxes rather than writing numbers where you can. A box has `left`, `right`,
-`top` and `bottom` (the columns and rows of its edges) and `cx`, `cy` (its middle).
+`top` and `bottom` (the columns and rows of its edges) and `cx`, `cy` (its middle, rounded
+up and to the left when the size is even).
+
+`w` and `h` count both walls. A box sized around its label is as wide as the widest label
+line plus `2 + 2·pad` (`pad=1` by default) and as tall as the number of lines plus 2. Widths
+are display widths, so `T₁`, `s²` and `ẋ` take one column per character, as you'd expect.
 
 ## Primitives
 
 | call | draws |
 |---|---|
 | `box!(c, x, y, w, h; label, line, align, valign, pad)` | a box; without `w, h` it is sized around the label |
+| `tf!(c, x, y, num, den)` | a transfer-function block, `num` over `den`, with the fraction bar on row `y` |
 | `wire!(c, (x1, y1), (x2, y2), ...; line, cap, over)` | an orthogonal path through the points |
 | `hline!(c, x1, x2, y)`, `vline!(c, x, y1, y2)` | a one-segment wire |
 | `text!(c, x, y, str; align)` | text; `\n` continues on the next row |
@@ -43,12 +51,14 @@ positions from boxes rather than writing numbers where you can. A box has `left`
   so crossing a box wall leaves a gap (`──────` straight through `║`).
 - `dir` is `:up`, `:right`, `:down` or `:left`. `head` is `:arrow` (→), `:triangle` (▷),
   `:solid` (▶), `:small` (▹) or `:smallsolid` (▸).
-- `align` is `:left`, `:center` or `:right`. For `text!` it says which end of the text sits
-  at `x`. For a box label it places the label inside the box, `pad` columns from the edge.
+- `align` is `:left`, `:center` or `:right`. For `text!` it says what sits at `x`: the first
+  character, the middle one (rounded left) or the last. For a box label it places the label
+  inside the box, `pad` columns from the edge.
 
 Order matters. Draw boxes and wires first and marks, arrows and text last. Text refuses to
 overwrite a stroke and a stroke refuses to overwrite text, so a collision is an error instead
-of a silent mess.
+of a silent mess. Text can't see strokes drawn after it, though, so check a centred label
+against its neighbours' edges yourself.
 
 To reuse part of a diagram, write a function `part!(c, x, y)` that draws it relative to
 `(x, y)` and returns its outer box (see `scenes/008.jl`).
@@ -58,7 +68,8 @@ To reuse part of a diagram, write a function `part!(c, x, y)` that draws it rela
 An **error** is an arm that meets a stroke with no arm back, like `┬` above `─`. This is what
 a one-column slip looks like, so fix it. The one deliberate case is a wire touching a wall
 without joining it (`←──│`). Lint can't tell that apart from a slip, so if you meant it, leave
-the error. An arrowhead in the last cell (`──→│`) avoids it. A **warning** is a loose end, a stroke running
+the error. An arrowhead in the last cell (`──→│`) avoids it. A **warning** is a loose end (a full stroke pointing into empty space; a
+half-stroke `╶` is a proper end and isn't reported), a stroke running
 into a word, or a heavy arm meeting a light one. Finished diagrams have these on purpose (wire
 ends, axis ticks), so read them but don't chase every one.
 
@@ -73,6 +84,11 @@ ends, axis ticks), so read them but don't chase every one.
   joining it. Don't use `over=true` for that, because it cuts the wall. In the
   NetworkDynamics diagrams, triangles (`▽ △`) sit on the box edge itself.
 - `o` is a terminal or connection point, and `●` or `∙` is a junction where a signal splits.
+- A summing point is either a mark on the wire, `(Σ)` or `(+)`, with the inputs arriving from
+  the sides and a `+`/`-` next to each arrow, or a small box labelled `Σ` with the signs
+  written inside next to each input (better for three or more inputs).
+- Limits of a block go above and below its right corner (`V_Amax` / `V_Amin`), or use the
+  `__ max` / `min __/` notation of `scenes/013.jl`.
 - Leave a column of space between a label and a wire, or end the wire with a half-stroke.
 
 ## Example

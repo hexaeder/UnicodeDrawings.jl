@@ -166,3 +166,15 @@ function box!(c::Canvas, x, y, w=nothing, h=nothing; label="", line=:light, dash
     end
     b
 end
+
+"""
+    tf!(c, x, y, num, den; line=:round, pad=1) -> Box
+
+A transfer-function block: `num` over `den` with a fraction bar on row `y`, so the block sits on
+a signal wire drawn along `y`. `x` is the left edge.
+"""
+function tf!(c::Canvas, x, y, num, den; line=:round, pad=1)
+    b = box!(c, x, y - 2; label="$num\n\n$den", line, pad)
+    hline!(c, b.left + 1, b.right - 1, y)
+    b
+end
