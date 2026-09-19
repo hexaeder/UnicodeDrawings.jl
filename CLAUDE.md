@@ -14,8 +14,12 @@ the tool does it.
   `parse_text` reads a finished diagram back, and `render` writes one.
 - `src/draw.jl`: the primitives (`box!`, `wire!`, `text!`, `mark!`, `arrow!`, `stroke!`).
 - `src/lint.jl`: `lint`, `ruler`, `locate`.
+- `src/import.jl`: diagram → scene (`import_scene`), and the `import`/`put` round trip on
+  fenced blocks in files. Guesses are checked by drawing them; leftovers become fix-ups.
 - `src/cli.jl`: `main`, run by `bin/udraw` through `julia -m UnicodeDrawings`.
 - `scenes/NNN.jl` reproduce `examples/NNN_*`. `GUIDE.md` is the user guide for Claude.
+
+The picture is the source of truth. Scenes are throwaway: import, edit, put back.
 
 Develop in a REPL on the `test` env (a workspace, so it sees the package). The CLI pays the
 startup cost on every call, which the precompile workload at the end of the module keeps low.

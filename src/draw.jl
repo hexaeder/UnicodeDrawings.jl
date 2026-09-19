@@ -62,12 +62,24 @@ function wire!(c::Canvas, points::Tuple{Int,Int}...; line=:round, dash=nothing, 
 end
 
 """
-    stroke!(c, x, y, ch::Char)
+    stroke!(c, x, y, ch::Char; over=false)
 
 Merge the arms of box-drawing character `ch` into the cell. This is the escape hatch for
-details no wire produces, such as a tick mark on a plot axis.
+details no wire produces, such as a tick mark on a plot axis. With `over=true` the cell becomes
+exactly `ch`, whatever was there.
 """
-stroke!(c::Canvas, x, y, ch::Char) = addarms!(c, x, y, CHAR_ARMS[ch]; style=CHAR_STYLE[ch])
+function stroke!(c::Canvas, x, y, ch::Char; over=false)
+    over || return addarms!(c, x, y, CHAR_ARMS[ch]; style=CHAR_STYLE[ch])
+    c.cells[(x, y)] = Cell(CHAR_ARMS[ch], CHAR_STYLE[ch], "")
+    c
+end
+
+"""
+    erase!(c, x, y)
+
+Clear the cell.
+"""
+erase!(c::Canvas, x, y) = (delete!(c.cells, (x, y)); c)
 
 hline!(c::Canvas, x1, x2, y; kw...) = wire!(c, (x1, y), (x2, y); kw...)
 vline!(c::Canvas, x, y1, y2; kw...) = wire!(c, (x, y1), (x, y2); kw...)

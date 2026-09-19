@@ -18,6 +18,24 @@ strokes into the right junctions and checks the result.
 `udraw lint file.txt` checks a diagram that was drawn by hand. If the file has a ```` ``` ````
 fence, only the first fenced block is checked.
 
+## Editing an existing diagram
+
+Diagrams live in docstrings and markdown; there is no scene file to keep. To change one:
+
+1. `bin/udraw import src/Model.jl:LINE -o scene.jl` turns the fenced block around `LINE` into a
+   scene (without `:LINE` it lists the blocks when there are several). Rendering the imported
+   scene gives back the diagram exactly: boxes, `tf!` blocks, wires, labels and marks are
+   recognised, and whatever isn't ends up as per-cell fix-ups at the bottom.
+2. Edit the scene. Wire ends on a box and text next to a box are written relative to it
+   (`tf.right + 2`), so they move when the box grows. Everything else has plain coordinates.
+   After a change that shifts a whole region, expect to move the rest by hand; a collision
+   error shows you the canvas as far as it got.
+3. `bin/udraw put scene.jl` renders the scene and replaces the block in the original file. It
+   refuses if the block was changed by hand since the import; import again then. The scene
+   can be edited and put again as often as you like, and thrown away afterwards.
+
+For a one-character fix, editing the text directly and running `udraw lint` is quicker.
+
 ## Coordinates
 
 `x` is the column and `y` the row, both starting at 1, with `y` counting downwards. Take

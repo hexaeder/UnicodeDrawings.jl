@@ -57,6 +57,32 @@ KNOWN_ERRORS = Dict(
         end
     end
 
+    @testset "import reproduces every example" begin
+        for f in EXFILES
+            s = load_example(f)
+            @test render(UnicodeDrawings.evalscene(UnicodeDrawings.import_scene(s))) == normtext(s)
+        end
+    end
+
+    @testset "import, edit, put" begin
+        mktempdir() do dir
+            src = joinpath(dir, "model.jl")
+            write(src, "\"\"\"\n    Lag()\n\n```asciiart\n$(example("011"))\n```\n\nText.\n\"\"\"\n")
+            scene = joinpath(dir, "scene.jl")
+            write(scene, UnicodeDrawings.import_file(src, 5))
+            write(scene, replace(read(scene, String), "\"K\"" => "\"K_p\""))
+            UnicodeDrawings.put_scene(scene)
+            @test occursin("in │   K_p   │ out", read(src, String))
+            @test endswith(read(src, String), "```\n\nText.\n\"\"\"\n")
+            # a second edit goes through, a hand edit in between is refused
+            write(scene, replace(read(scene, String), "\"K_p\"" => "\"K_i\""))
+            UnicodeDrawings.put_scene(scene)
+            @test occursin("K_i", read(src, String))
+            write(src, replace(read(src, String), "K_i" => "K_x"))
+            @test_throws ErrorException UnicodeDrawings.put_scene(scene)
+        end
+    end
+
     @testset "scene $n" for n in SCENES
         @test checkscene(n; show=false)
     end

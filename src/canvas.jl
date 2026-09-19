@@ -55,6 +55,10 @@ Write `str` starting at column `x`. Writing over anything already there is an er
 """
 function puttext!(c::Canvas, x, y, str::AbstractString; over=false)
     for g in Base.Unicode.graphemes(str)
+        if g == " "   # spaces stay blank, as in `parse_text`
+            x += 1
+            continue
+        end
         w = textwidth(g)
         for (i, cell) in enumerate((Cell(Arms(), SOLID, String(g)), ntuple(_ -> CONT, w - 1)...))
             old = c[x + i - 1, y]

@@ -3,10 +3,15 @@ usage: udraw render <scene.jl> [--ruler] [-o <out.txt>]
        udraw lint   <diagram.txt | scene.jl>
        udraw ruler  <diagram.txt | scene.jl>
        udraw locate <diagram.txt | scene.jl> <pattern>
+       udraw import <file>[:<line>] [-o <scene.jl>]
+       udraw put    <scene.jl>
 
 A scene is a Julia file whose last value is a Canvas. `render` prints the diagram and reports
 lint issues on stderr. A diagram file may be plain text or contain a ``` fenced block, in which
 case the first block is used. `-` reads from stdin. Exit status is 1 if lint finds errors.
+
+`import` turns the diagram block at <line> of a file (a docstring, a markdown file, a plain
+diagram) into a scene. `put` renders that scene and writes it back into the same block.
 """
 
 """
@@ -76,6 +81,24 @@ function (@main)(args)
             write(rest[out+1], str * "\n")
         end
         return report(str)
+    elseif cmd == "import" && !isempty(rest)
+        m = match(r"^(.*?)(?::(\d+))?$", rest[1])
+        scene = try
+            import_file(m.captures[1], isnothing(m.captures[2]) ? nothing : parse(Int, m.captures[2]))
+        catch err
+            println(stderr, "error: ", sprint(showerror, err))
+            return 1
+        end
+        out = findfirst(==("-o"), rest)
+        isnothing(out) ? print(scene) : write(rest[out+1], scene)
+    elseif cmd == "put" && length(rest) == 1
+        path, line, new = try
+            put_scene(rest[1])
+        catch err
+            return scene_error(rest[1], err)
+        end
+        println(stderr, "wrote $path:$line")
+        return report(new)
     elseif cmd == "lint" && length(rest) == 1
         return report(diagram(rest[1]))
     elseif cmd == "ruler" && length(rest) == 1

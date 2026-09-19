@@ -1,12 +1,13 @@
 module UnicodeDrawings
 
 export Canvas, render, parse_text, lint, lintreport, ruler, locate
-export box!, tf!, wire!, hline!, vline!, stroke!, text!, mark!, arrow!
+export box!, tf!, wire!, hline!, vline!, stroke!, erase!, text!, mark!, arrow!
 
 include("glyphs.jl")
 include("canvas.jl")
 include("draw.jl")
 include("lint.jl")
+include("import.jl")
 include("cli.jl")
 
 Base.show(io::IO, ::MIME"text/plain", c::Canvas) = print(io, render(c))
@@ -28,6 +29,7 @@ if ccall(:jl_generating_output, Cint, ()) == 1
         lintreport(devnull, s)
         ruler(devnull, s)
         locate(s, "●")
+        import_scene(s; check=false)
     end
     precompile(main, (Vector{String},))
 end
