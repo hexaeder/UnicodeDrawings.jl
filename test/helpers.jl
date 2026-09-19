@@ -19,12 +19,7 @@ function normtext(s)
     join(ls, '\n')
 end
 
-# A scene file evaluated in a fresh module, like the CLI will do. Its last value is the canvas.
-function runscene(path)
-    m = Module(:Scene)
-    Core.eval(m, :(using UnicodeDrawings))
-    Base.include(m, path)
-end
+runscene = UnicodeDrawings.runscene
 SCENEDIR = joinpath(@__DIR__, "..", "scenes")
 function checkscene(num; show=true)
     got = render(runscene(joinpath(SCENEDIR, "$num.jl")))

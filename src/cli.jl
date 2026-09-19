@@ -1,0 +1,73 @@
+const USAGE = """
+usage: udraw render <scene.jl> [--ruler] [-o <out.txt>]
+       udraw lint   <diagram.txt | scene.jl>
+       udraw ruler  <diagram.txt | scene.jl>
+       udraw locate <diagram.txt | scene.jl> <pattern>
+
+A scene is a Julia file whose last value is a Canvas. `render` prints the diagram and reports
+lint issues on stderr. A diagram file may be plain text or contain a ``` fenced block, in which
+case the first block is used. `-` reads from stdin. Exit status is 1 if lint finds errors.
+"""
+
+"""
+    runscene(path) -> Canvas
+
+Evaluate a scene file in a fresh module that has UnicodeDrawings loaded.
+"""
+function runscene(path)
+    m = Module(:Scene)
+    Core.eval(m, :(using UnicodeDrawings))
+    c = Base.include(m, path)
+    c isa Canvas || error("$path must end with the Canvas, got a $(typeof(c))")
+    c
+end
+
+function fenced(str)
+    lines = split(str, '\n')
+    i = findfirst(startswith("```"), lines)
+    isnothing(i) && return str
+    j = something(findnext(startswith("```"), lines, i + 1), length(lines) + 1)
+    join(lines[i+1:j-1], '\n')
+end
+
+# The diagram text for a scene (rendered) or a text file (as is).
+function diagram(path)
+    endswith(path, ".jl") && return render(runscene(path))
+    fenced(path == "-" ? read(stdin, String) : read(path, String))
+end
+
+function report(str)
+    issues = lintreport(stderr, str)
+    nerr = count(i -> i.level == :error, issues)
+    isempty(issues) || println(stderr, "$nerr errors, $(length(issues) - nerr) warnings")
+    nerr == 0 ? 0 : 1
+end
+
+function (@main)(args)
+    isempty(args) && (print(stderr, USAGE); return 2)
+    cmd, rest = args[1], args[2:end]
+    if cmd == "render" && !isempty(rest)
+        out = findfirst(==("-o"), rest)
+        str = render(runscene(rest[1]))
+        if "--ruler" in rest
+            ruler(stdout, str)
+        elseif isnothing(out)
+            println(str)
+        else
+            write(rest[out+1], str * "\n")
+        end
+        return report(str)
+    elseif cmd == "lint" && length(rest) == 1
+        return report(diagram(rest[1]))
+    elseif cmd == "ruler" && length(rest) == 1
+        ruler(stdout, diagram(rest[1]))
+    elseif cmd == "locate" && length(rest) == 2
+        for (x, y) in locate(diagram(rest[1]), rest[2])
+            println("$x $y")
+        end
+    else
+        print(stderr, USAGE)
+        return 2
+    end
+    return 0
+end

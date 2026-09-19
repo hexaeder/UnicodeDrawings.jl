@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# Command line entry point, see `udraw` without arguments for usage.
+root=$(dirname "$(dirname "$(realpath "$0")")")
+exec julia --startup-file=no --project="$root" -m UnicodeDrawings "$@"
