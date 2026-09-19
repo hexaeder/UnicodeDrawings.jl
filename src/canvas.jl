@@ -50,16 +50,17 @@ end
 """
     puttext!(c, x, y, str; over=false)
 
-Write `str` starting at column `x`. Writing over a stroke is an error unless `over=true`, which
-is how arrowheads and junction dots are placed on a wire.
+Write `str` starting at column `x`. Writing over anything already there is an error unless
+`over=true`, which is how arrowheads and junction dots are placed on a wire.
 """
 function puttext!(c::Canvas, x, y, str::AbstractString; over=false)
     for g in Base.Unicode.graphemes(str)
         w = textwidth(g)
         for (i, cell) in enumerate((Cell(Arms(), SOLID, String(g)), ntuple(_ -> CONT, w - 1)...))
             old = c[x + i - 1, y]
-            if isstroke(old) && !over
-                error("text $(repr(str)) at ($x, $y) would overwrite a stroke")
+            if !isblank(old) && !over
+                what = istext(old) ? "text $(repr(old.text))" : "a stroke"
+                error("text $(repr(str)) at ($x, $y) would overwrite $what")
             end
             c.cells[(x + i - 1, y)] = cell
         end

@@ -8,15 +8,15 @@ end
 
 c = Canvas()
 y = 5                     # forward path
-s1, s2 = 10, 17           # summing points
+s1, s2 = 8, 14            # summing points
 
-lead = tf!(c, s2 + 5, y, "1 + s T_C", "1 + s T_B")
-reg = tf!(c, lead.right + 4, y, "K_A", "1 + s T_A")
-lim = box!(c, reg.right + 4, y - 1; label="lim", line=:round)
+lead = tf!(c, s2 + 4, y, "1 + s T_C", "1 + s T_B")
+reg = tf!(c, lead.right + 3, y, "K_A", "1 + s T_A")
+lim = box!(c, reg.right + 3, y - 1; label="lim", line=:round)
 s3 = lim.right + 5
 exc = tf!(c, s3 + 4, y, "1", "s T_E")
-tap = exc.right + 3       # V_E is tapped here for V_FE and F_EX
-fex = box!(c, tap + 3, y + 3; label="F_EX(K_C I_FD / V_E)", line=:round)
+tap = exc.right + 2       # V_E is tapped here for V_FE and F_EX
+fex = box!(c, tap + 2, y + 3; label="F_EX(K_C I_FD/V_E)", line=:round)
 mul = fex.cx
 vfelabel = "V_E (K_E + S_E(V_E)) + K_D I_FD"
 vfe = box!(c, tap - 3 - (textwidth(vfelabel) + 3), y + 7; label=vfelabel, line=:round)
@@ -40,7 +40,7 @@ wire!(c, (s2, y - 3), (s2, y)); arrow!(c, s2, y - 1, :down)
 # exciter internals: V_E feeds F_EX and V_FE, V_FE goes back to both sums
 wire!(c, (tap, y), (tap, vfe.cy), (vfe.right, vfe.cy)); arrow!(c, vfe.right + 1, vfe.cy, :left)
 wire!(c, (tap, fex.cy), (fex.left, fex.cy)); arrow!(c, fex.left - 1, fex.cy, :right)
-wire!(c, (fex.right + 5, fex.cy), (fex.right, fex.cy)); arrow!(c, fex.right + 1, fex.cy, :left)
+wire!(c, (fex.cx, fex.bottom + 2), (fex.cx, fex.bottom)); arrow!(c, fex.cx, fex.bottom + 1, :up)
 wire!(c, (mul, fex.top), (mul, y)); arrow!(c, mul, y + 1, :up)
 wire!(c, (vfe.left, vfe.cy), (rate.right, vfe.cy)); arrow!(c, rate.right + 1, vfe.cy, :left)
 wire!(c, (s3, vfe.top), (s3, y)); arrow!(c, s3, y + 1, :up)
@@ -61,7 +61,7 @@ text!(c, s3 + 1, y + 1, "-"); text!(c, s3 - 2, y + 3, "V_FE"; align=:right)
 text!(c, reg.right - 1, reg.top - 1, "V_Amax"); text!(c, reg.right - 1, reg.bottom + 1, "V_Amin")
 text!(c, lim.left, lim.top - 1, "E_FEmax"); text!(c, lim.left, lim.bottom + 1, "E_FEmin")
 text!(c, exc.right, exc.top - 1, "V_Emax(I_FD, V_E)"; align=:right); text!(c, exc.right, exc.bottom + 1, "V_Emin"; align=:right)
-text!(c, lim.right + 2, y - 1, "E_FE"); text!(c, tap, y - 1, "V_E"; align=:center)
+text!(c, lim.right + 2, y - 1, "E_FE"); text!(c, tap + 1, y - 1, "V_E")
 text!(c, mul + 4, y - 1, "E_FD")
-text!(c, fex.right + 7, fex.cy, "I_FD")
+text!(c, fex.cx, fex.bottom + 3, "I_FD"; align=:center)
 c

@@ -56,7 +56,7 @@ are display widths, so `T₁`, `s²` and `ẋ` take one column per character, as
   inside the box, `pad` columns from the edge.
 
 Order matters. Draw boxes and wires first and marks, arrows and text last. Text refuses to
-overwrite a stroke and a stroke refuses to overwrite text, so a collision is an error instead
+overwrite anything and a stroke refuses to overwrite text, so a collision is an error instead
 of a silent mess. Text can't see strokes drawn after it, though, so check a centred label
 against its neighbours' edges yourself.
 

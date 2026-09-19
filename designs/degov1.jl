@@ -13,8 +13,8 @@ end
 text!(c, sum.cx + 1, sum.bottom - 1, "−")
 
 # forward path
-cb = box!(c, sum.right + 4, R - 2; label="1 + s T₃\n\n1 + s T₁ + s² T₁ T₂", line=:round)
-act = box!(c, cb.right + 4, R - 2; label="K (1 + s T₄)\n\n(1 + s T₅)(1 + s T₆)", line=:round)
+cb = box!(c, sum.right + 4, R - 2; label="1 + s T3\n\n1 + s T1 + s² T1 T2", line=:round)
+act = box!(c, cb.right + 4, R - 2; label="K (1 + s T4)\n\n(1 + s T5)(1 + s T6)", line=:round)
 int = box!(c, act.right + 4, R - 2; label="1\n\ns", line=:round)
 mul = box!(c, int.right + 6, R - 1, 3, 3; label="×", line=:round)
 for b in (cb, act, int)
@@ -46,7 +46,7 @@ mux = box!(c, 50, int.bottom + 2, 5, 7)
 text!(c, mux.right - 1, mux.top + 1, "0")
 text!(c, mux.right - 1, mux.bottom - 1, "1")
 text!(c, mux.right, mux.bottom + 1, "DroopControl"; align=:right)
-lag = box!(c, mux.right + 4, mux.bottom - 3; label="1\n\n1 + s Tₑ", line=:round)
+lag = box!(c, mux.right + 4, mux.bottom - 3; label="1\n\n1 + s Te", line=:round)
 hline!(c, lag.left + 1, lag.right - 1, lag.cy)
 droop = box!(c, 30, mux.cy - 1; label="Droop", line=:round)
 
