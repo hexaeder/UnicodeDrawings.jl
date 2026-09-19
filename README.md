@@ -1,5 +1,19 @@
 # Unicode diagrams
 
+A small Julia tool for drawing box diagrams like the ones in the PowerDynamics and
+NetworkDynamics docstrings. You write a scene of boxes, wires and labels, and the tool places the
+characters, merges crossings into the right junctions and lints the result.
+
+```
+bin/udraw render scenes/011.jl        # print the diagram, lint issues on stderr
+bin/udraw lint some_diagram.txt       # check a hand-drawn diagram
+bin/udraw ruler | locate ...          # see where things landed
+```
+
+`GUIDE.md` describes the primitives and the conventions. `scenes/` reproduces eleven of the
+examples below exactly, and these double as the test suite (`julia --project=test
+test/runtests.jl`). A CLI call takes about 0.6 s, mostly Julia's own startup.
+
 `examples/` holds 94 diagrams collected from PowerDynamics, NetworkDynamics and
 PowerDynamicsLibrary (src and docs). Each file starts with `# source: path:lines`. They were
 collected by `tools/extract.py` and then sorted by hand to drop false positives such as rename

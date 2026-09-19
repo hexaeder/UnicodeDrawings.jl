@@ -7,26 +7,21 @@ the tool does it.
 
 `README.md` has the idea in more detail and `examples/` holds the collected diagrams.
 
-## Plan
+## Layout
 
-- Primitives with integer coordinates: boxes (light, rounded, heavy, double) with a label, wires
-  given as orthogonal paths, arrowheads, free text, and groups so a diagram can be reused inside
-  another one.
-- Anchors instead of raw coordinates where possible (`box.right`, `box.top + 3`), and helpers for
-  text width and for sizing a box around its label.
-- Crossing strokes merge into the right junction (`┼`, `┤`, `╂`, ...) through a table keyed on
-  which arms are present. No auto-routing: arrowheads, `(+)` points and labels are placed by hand.
-- A linter checks that every box-drawing char's arms match its neighbours, and a ruler/grid dump
-  shows where things landed. The PNG is for overall balance, not for alignment.
-- Core has no dependencies. Use it from a warm REPL, with a thin CLI wrapper on top.
+- `src/glyphs.jl`: each box character as four weighted arms (N E S W), plus line styles.
+- `src/canvas.jl`: the grid. Stroke cells merge arms, text cells hold graphemes.
+  `parse_text` reads a finished diagram back, and `render` writes one.
+- `src/draw.jl`: the primitives (`box!`, `wire!`, `text!`, `mark!`, `arrow!`, `stroke!`).
+- `src/lint.jl`: `lint`, `ruler`, `locate`.
+- `src/cli.jl`: `main`, run by `bin/udraw` through `julia -m UnicodeDrawings`.
+- `scenes/NNN.jl` reproduce `examples/NNN_*`. `GUIDE.md` is the user guide for Claude.
 
-## First targets
+Develop in a REPL on the `test` env (a workspace, so it sees the package). The CLI pays the
+startup cost on every call, which the precompile workload at the end of the module keeps low.
 
-Reproduce these exactly, as tests:
+## Next
 
-- `examples/011_*` transfer-function block (start here)
-- `examples/055_*` feedback loop with `●` junctions
-- then `005_*` MTKBus, `007_*` CompositeInjector, `098_*` hysteresis plot, `072_*` code
-  annotation, `074_*` nested AVR/Gov (mixed heavy/light junctions), `079_*` ND overview
-  (arrowheads inside box edges), `053_*` grid sketch, `011`'s limited variant `013_*`, and
-  `008_*` compile_bus (groups, double boxes).
+- Target list is done (011 013 055 005 007 074 079 053 098 072 008). More scenes from
+  `examples/` will show which primitives are missing (braces `⎫⎬⎭`, diagonals `╱`).
+- Lint the diagrams in the PowerDynamics/NetworkDynamics docstrings directly from the source files.
