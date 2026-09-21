@@ -3,5 +3,8 @@ uuid = "86195ca4-a416-4d0d-bdf0-e07ea36c7c37"
 authors = ["Hans Würfel"]
 version = "0.1.0"
 
+[apps]
+udraw = {}
+
 [workspace]
 projects = ["test"]

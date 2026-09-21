@@ -5,6 +5,7 @@ usage: udraw render <scene.jl> [--ruler] [-o <out.txt>]
        udraw locate <diagram.txt | scene.jl> <pattern>
        udraw import <file>[:<line>] [-o <scene.jl>]
        udraw put    <scene.jl>
+       udraw install-skill
 
 A scene is a Julia file whose last value is a Canvas. `render` prints the diagram and reports
 lint issues on stderr. A diagram file may be plain text or contain a ``` fenced block, in which
@@ -13,6 +14,7 @@ Exit status is 1 if lint finds errors.
 
 `import` turns the diagram block at <line> of a file (a docstring, a markdown file, a plain
 diagram) into a scene. `put` renders that scene and writes it back into the same block.
+`install-skill` links `skill/` into ~/.claude/skills so Claude finds the guide.
 """
 
 """
@@ -88,6 +90,31 @@ function lint_file(path)
     status
 end
 
+"""
+    install_skill(dir) -> Int
+
+Link `skill/` in the package into Claude's skill directory. It is a symlink, so the installed
+skill is the file in the repository and editing the guide needs no reinstall.
+"""
+function install_skill(dir=joinpath(homedir(), ".claude", "skills"))
+    src = joinpath(pkgdir(@__MODULE__), "skill")
+    dst = joinpath(dir, "udraw")
+    if ispath(dst) && !islink(dst)
+        println(stderr, "error: $dst exists and is not a symlink")
+        return 1
+    end
+    mkpath(dir)
+    islink(dst) && rm(dst)
+    symlink(src, dst)
+    println("$dst -> $src")
+    # The guide names the package directory, so a moved package sends Claude to a dead path.
+    root = Base.contractuser(pkgdir(@__MODULE__))
+    if !occursin(root, read(joinpath(src, "SKILL.md"), String))
+        println(stderr, "warning: SKILL.md does not mention $root, paths in it may be stale")
+    end
+    return 0
+end
+
 function (@main)(args)
     isempty(args) && (print(stderr, USAGE); return 2)
     cmd, rest = args[1], args[2:end]
@@ -129,6 +156,8 @@ function (@main)(args)
         return path == "-" || isscene(path) ? report(diagram(path)) : lint_file(path)
     elseif cmd == "ruler" && length(rest) == 1
         ruler(stdout, diagram(rest[1]))
+    elseif cmd == "install-skill" && isempty(rest)
+        return install_skill()
     elseif cmd == "locate" && length(rest) == 2
         for (x, y) in locate(diagram(rest[1]), rest[2])
             println("$x $y")

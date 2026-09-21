@@ -1,13 +1,20 @@
+---
+name: udraw
+description: Draw, edit and lint Unicode box diagrams — the box-drawing-character pictures in the PowerDynamics and NetworkDynamics docstrings. Use when such a diagram has to be made or changed in a docstring, a markdown file or a plain text file.
+---
+
 # Drawing with UnicodeDrawings
 
-This is the guide for drawing a box diagram, written for Claude. You write a scene, a short
-Julia file with primitives in it. The tool puts the characters on the grid, merges crossing
-strokes into the right junctions and checks the result.
+You write a scene, a short Julia file with primitives in it. The tool puts the characters on the
+grid, merges crossing strokes into the right junctions and checks the result.
+
+`udraw` is a Pkg app that runs from `~/.julia/dev/UnicodeDrawings`. Paths below, like
+`scenes/011.jl` and `tools/screenshot.sh`, are relative to that directory.
 
 ## Workflow
 
 1. Write `scene.jl`: `c = Canvas()`, then the primitives, and end the file with `c`.
-2. Run `bin/udraw render scene.jl` (or `-o out.txt` to write a file). It prints the diagram,
+2. Run `udraw render scene.jl` (or `-o out.txt` to write a file). It prints the diagram,
    then lint issues and a `lint: N errors, M warnings` line on stderr. If the scene fails,
    for example on a collision, you get the message, the scene line and the canvas drawn so far.
 3. To fix placement, `udraw render scene.jl --ruler` shows column and row numbers, and
@@ -22,7 +29,7 @@ fence, only the first fenced block is checked.
 
 Diagrams live in docstrings and markdown; there is no scene file to keep. To change one:
 
-1. `bin/udraw import src/Model.jl:LINE -o scene.jl` turns the fenced block around `LINE` into a
+1. `udraw import src/Model.jl:LINE -o scene.jl` turns the fenced block around `LINE` into a
    scene (without `:LINE` it lists the blocks when there are several). Rendering the imported
    scene gives back the diagram exactly: boxes, `tf!` blocks, wires, labels and marks are
    recognised, and whatever isn't ends up as per-cell fix-ups at the bottom.
@@ -37,7 +44,7 @@ Diagrams live in docstrings and markdown; there is no scene file to keep. To cha
    `insertrows!` does the same for rows. After an insert, box variables still hold their old
    position, so for anything right of the cut add the inserted width yourself.
    `box!(…; clear=true)` empties its rectangle and joins its edges to whatever points at it.
-3. `bin/udraw put scene.jl` renders the scene and replaces the block in the original file. It
+3. `udraw put scene.jl` renders the scene and replaces the block in the original file. It
    refuses if the block was changed by hand since the import; import again then. Keep the
    `# udraw:` first line intact, it says where the block is. The scene can be edited and put
    again as often as you like, and thrown away afterwards.

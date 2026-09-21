@@ -10,9 +10,15 @@ bin/udraw lint some_diagram.txt       # check a hand-drawn diagram
 bin/udraw ruler | locate ...          # see where things landed
 ```
 
-`GUIDE.md` describes the primitives and the conventions. `scenes/` reproduces eleven of the
-examples below exactly, and these double as the test suite (`julia --project=test
-test/runtests.jl`). A CLI call takes about 0.6 s, mostly Julia's own startup.
+`bin/udraw` runs the tool from the repository. `Pkg.Apps.develop(path=".")` installs it as
+`udraw` in `~/.julia/bin` instead, and `udraw install-skill` links `skill/` into
+`~/.claude/skills`. Both point at this working tree, so edits here take effect without
+reinstalling.
+
+`skill/SKILL.md` is the guide for Claude and describes the primitives and the conventions.
+`scenes/` reproduces eleven of the examples below exactly, and these double as the test suite
+(`julia --project=test test/runtests.jl`). A CLI call takes about 0.6 s, mostly Julia's own
+startup.
 
 `examples/` holds 94 diagrams collected from PowerDynamics, NetworkDynamics and
 PowerDynamicsLibrary (src and docs). Each file starts with `# source: path:lines`. They were
