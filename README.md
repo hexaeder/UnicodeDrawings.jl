@@ -63,15 +63,14 @@ skill follows the repository as well.
 ## Usage
 
 ```
-udraw render <scene.jl> [--ruler] [-o <out.txt>]
-udraw lint   <diagram.txt | scene.jl | source file>
-udraw ruler  <diagram.txt | scene.jl>
-udraw locate <diagram.txt | scene.jl> <pattern>
-udraw png    <diagram.txt | scene.jl> <out.png>
-udraw import <file>[:<line>] [-o <scene.jl>]
-udraw put    <scene.jl>
+udraw render <input> [--ruler] [--locate <pattern>] [--png] [-o <out>]
+udraw import <input> [-o <scene.jl>]
 udraw install-skill
 ```
+
+The input is a scene or a finished diagram, as a file or `-` for stdin. In a file with
+```` ``` ```` fenced blocks, such as a Julia source file or markdown, `file:LINE` picks the block
+around that line. Output goes to stdout, or to a file with `-o`.
 
 ### Drawing a new diagram
 
@@ -84,8 +83,8 @@ coordinate conventions and the styles found in the existing diagrams.
 things land on the same cell, rendering stops with the scene line that caused it and the
 diagram drawn so far.
 
-To find out where things landed, `--ruler` adds column and row numbers, and `udraw locate` prints
-the exact `x y` of each match of a pattern:
+To find out where things landed, `--ruler` adds column and row numbers, and `--locate` prints
+the exact `x y` of each match of a pattern instead of the diagram:
 
 ```
 $ udraw render pt1.jl --ruler
@@ -96,46 +95,46 @@ $ udraw render pt1.jl --ruler
 3 ╶───┤╶───────╴├────╴
 4     │ 1 + s T │
 5     ╰─────────╯
-$ udraw render pt1.jl -o pt1.txt; udraw locate pt1.txt '┤'
+$ udraw render pt1.jl --locate '┤'
 5 3
 ```
+
+`--png -o out.png` renders the diagram as an image, which helps with spacing and balance. The
+font is the bundled JuliaMono and system fonts are ignored, so the result looks the same
+everywhere.
+
+### Checking a diagram
+
+Given a finished diagram instead of a scene, `render` prints it back with the lint report:
+
+```sh
+udraw render src/Library/building_blocks.jl:52
+```
+
+Lint checks the arms of every box character against its neighbours, which is what a
+one-column slip breaks. Issues are reported at their line in the file. Errors are misaligned
+strokes and set the exit status to 1. Warnings are loose ends and the like, which finished
+diagrams often have on purpose.
 
 ### Editing a diagram in a docstring
 
 Diagrams live in docstrings and markdown files, so there is no scene to keep around. Instead,
-`import` rebuilds a scene from the fenced block at a given line, and `put` writes the edited
-scene back into the same block:
+`import` rebuilds a scene from the fenced block at a given line:
 
 ```sh
 udraw import src/Library/building_blocks.jl:52 -o scene.jl
 $EDITOR scene.jl
-udraw put scene.jl
+udraw render scene.jl        # then paste the result over the old block
 ```
 
 The imported scene reproduces the block exactly. Boxes, transfer-function blocks, wires and
 labels come back as primitives, and anything not recognised becomes per-cell fix-ups at the end
-of the scene. `put` refuses to write if the block was changed by hand since the import.
-
-### Checking a diagram
-
-`udraw lint` checks the arms of every box character against its neighbours, which is what a
-one-column slip breaks. On a source or markdown file it checks every diagram block in it and
-reports issues at their line in the file. Errors are misaligned strokes and set the exit status
-to 1. Warnings are loose ends and the like, which finished diagrams often have on purpose.
-
-### PNG
-
-```sh
-udraw png diagram.txt out.png
-```
-
-renders a diagram, or a scene, as an image, which helps with spacing and balance. The font is
-the bundled JuliaMono and system fonts are ignored, so the result looks the same everywhere.
+of the scene.
 
 ## Repository
 
 - `src/`: the package. `glyphs.jl` and `canvas.jl` model the grid, `draw.jl` has the
-  primitives, `lint.jl` the checks, `import.jl` the import/put round trip, `png.jl` the image
+  primitives, `lint.jl` the checks, `import.jl` the diagram-to-scene import, `png.jl` the image
   output and `cli.jl` the command line.
 - `assets/`: JuliaMono Regular with its license (SIL Open Font License 1.1).
 - `skill/SKILL.md`: the guide for Claude, and the most complete description of the primitives.

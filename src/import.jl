@@ -1,4 +1,4 @@
-# Turning a finished diagram back into a scene, and writing an edited scene back in place.
+# Turning a finished diagram back into a scene, and finding diagrams in files.
 #
 # The picture is the source of truth. `import_scene` guesses primitives (boxes, transfer-function
 # blocks, wires, labels, marks) so that an agent can edit the diagram as code. Every guess is
@@ -482,67 +482,19 @@ end
 blocktext(lines, (i, j, indent)) =
     join((startswith(l, indent) ? l[nextind(l, 0, length(indent) + 1):end] : l for l in lines[i+1:j-1]), '\n')
 
-# FNV-1a over the diagram with trailing spaces dropped, to notice edits between import and put.
-function diagram_hash(str)
-    h = 0x811c9dc5
-    for b in codeunits(normalize_diagram(str))
-        h = (h ⊻ b) * 0x01000193
-    end
-    string(h; base=16, pad=8)
-end
-normalize_diagram(str) = render(parse_text(str))
-
 """
-    import_file(path, line=nothing) -> String
+    pick_block(lines, line, name) -> (fence line, closing line, indent)
 
-Scene code for the diagram block of `path` that contains `line` (or the only one). The first
-line of the scene records where it came from, so that `put_scene` can write it back.
+The diagram block of a file that contains `line`, or the only one when `line` is `nothing`.
+With several blocks and no line, the error lists them so the caller can pick one.
 """
-function import_file(path, line=nothing)
-    lines = readlines(path)
+function pick_block(lines, line, name)
     blocks = diagram_blocks(lines)
     if !isnothing(line)
         filter!(b -> b[1] <= line <= b[2] || b[1] == 0, blocks)
     end
-    if length(blocks) != 1
-        msg = isempty(blocks) ? "no diagram block found" :
-              "$(length(blocks)) diagram blocks, pick one with $path:LINE:\n" *
-              join(("  line $(b[1]): $(first(split(blocktext(lines, b), '\n'), 1)...)" for b in blocks), '\n')
-        error(msg)
-    end
-    str = blocktext(lines, only(blocks))
-    "# udraw: $(abspath(path)):$(only(blocks)[1]) $(diagram_hash(str))\n" *
-    "# Edit freely; `udraw put` on this file writes the rendered diagram back to that block.\n" *
-    import_scene(str)
-end
-
-"""
-    put_scene(scenepath) -> (path, fence line, new diagram)
-
-Render an imported scene and replace its diagram block in the original file. Refuses if the
-block changed since the import. Afterwards the scene's header points at the new diagram, so the
-scene can be edited and put again.
-"""
-function put_scene(scenepath)
-    scene = readlines(scenepath)
-    m = isempty(scene) ? nothing : match(r"^# udraw: (.+):(\d+) ([0-9a-f]{8})$", first(scene))
-    isnothing(m) && error("$scenepath has no `# udraw:` header from `udraw import`")
-    path, line, h = m.captures[1], parse(Int, m.captures[2]), m.captures[3]
-    isfile(path) || error("$path, where the diagram came from, does not exist")
-    lines = split(read(path, String), '\n')
-    blocks = diagram_blocks(lines)
-    at = findfirst(b -> b[1] == line && diagram_hash(blocktext(lines, b)) == h, blocks)
-    if isnothing(at)   # the file moved around it; look for the unchanged diagram
-        hits = findall(b -> diagram_hash(blocktext(lines, b)) == h, blocks)
-        length(hits) == 1 || error("the diagram in $path changed since the import, import it again")
-        at = only(hits)
-    end
-    LAST_CANVAS[] = nothing
-    new = render(runscene(scenepath))
-    i, j, indent = blocks[at]
-    newlines = [isempty(l) ? l : indent * l for l in split(new, '\n')]
-    write(path, join([lines[1:i]; newlines; lines[j:end]], '\n'))
-    scene[1] = "# udraw: $path:$i $(diagram_hash(new))"
-    write(scenepath, join(scene, '\n') * "\n")
-    path, i, new
+    length(blocks) == 1 && return only(blocks)
+    isempty(blocks) && error("no diagram block in $name" * (isnothing(line) ? "" : " at line $line"))
+    error("$(length(blocks)) diagram blocks in $name, pick one with $name:LINE:\n" *
+          join(("  line $(b[1]): $(first(split(blocktext(lines, b), '\n')))" for b in blocks), '\n'))
 end

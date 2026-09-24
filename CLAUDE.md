@@ -15,15 +15,15 @@ the tool does it.
 - `src/draw.jl`: the primitives (`box!`, `wire!`, `text!`, `mark!`, `arrow!`, `stroke!`).
 - `src/lint.jl`: `lint`, `ruler`, `locate`.
 - `src/png.jl`: diagram → SVG → PNG with `resvg_jll` and the vendored JuliaMono in `assets/`.
-- `src/import.jl`: diagram → scene (`import_scene`), and the `import`/`put` round trip on
-  fenced blocks in files. Guesses are checked by drawing them; leftovers become fix-ups.
-- `src/cli.jl`: `main`, run by `bin/udraw` or the installed `udraw` app through
+- `src/import.jl`: diagram → scene (`import_scene`), and finding fenced blocks in files.
+  Guesses are checked by drawing them; leftovers become fix-ups.
+- `src/cli.jl`: `main` with `render` and `import`, run by `bin/udraw` or the installed `udraw` app through
   `julia -m UnicodeDrawings`.
 - `scenes/NNN.jl` reproduce `examples/NNN_*`.
 - `skill/SKILL.md` is the guide for Claude. `udraw install-skill` symlinks the directory into
   `~/.claude/skills`, so the installed skill is this file.
 
-The picture is the source of truth. Scenes are throwaway: import, edit, put back.
+The picture is the source of truth. Scenes are throwaway: import, edit, render, paste back.
 
 Develop in a REPL on the `test` env (a workspace, so it sees the package). The CLI pays the
 startup cost on every call, which the precompile workload at the end of the module keeps low.

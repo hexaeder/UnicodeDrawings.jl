@@ -18,12 +18,14 @@ grid, merges crossing strokes into the right junctions and checks the result.
    then lint issues and a `lint: N errors, M warnings` line on stderr. If the scene fails,
    for example on a collision, you get the message, the scene line and the canvas drawn so far.
 3. To fix placement, `udraw render scene.jl --ruler` shows column and row numbers, and
-   `udraw locate out.txt '┤'` gives the exact `x y` of each match. Use `locate`, not the
-   ruler, when you need a column number. Counting columns off the ruler is easy to get wrong.
-4. For overall balance, `udraw png out.txt out.png` renders a PNG you can look at.
+   `udraw render scene.jl --locate '┤'` gives the exact `x y` of each match. Use `--locate`
+   when you need a column number. Counting columns off the ruler is easy to get wrong.
+4. For overall balance, `udraw render scene.jl --png -o out.png` renders an image you can
+   look at. With `--ruler` the numbers are in the image too.
 
-`udraw lint file.txt` checks a diagram that was drawn by hand. If the file has a ```` ``` ````
-fence, only the first fenced block is checked.
+`render` also takes a finished diagram instead of a scene: a text file, a block of a source
+file as `src/Model.jl:LINE`, or `-` for stdin. It then prints it back with the lint report,
+which is how to check a diagram that was drawn by hand.
 
 ## Editing an existing diagram
 
@@ -44,15 +46,15 @@ Diagrams live in docstrings and markdown; there is no scene file to keep. To cha
    `insertrows!` does the same for rows. After an insert, box variables still hold their old
    position, so for anything right of the cut add the inserted width yourself.
    `box!(…; clear=true)` empties its rectangle and joins its edges to whatever points at it.
-3. `udraw put scene.jl` renders the scene and replaces the block in the original file. It
-   refuses if the block was changed by hand since the import; import again then. Keep the
-   `# udraw:` first line intact, it says where the block is. The scene can be edited and put
-   again as often as you like, and thrown away afterwards.
+3. `udraw render scene.jl -o new.txt`, then replace the lines between the fences with it,
+   indented like the fence. Afterwards `udraw render src/Model.jl:LINE` checks the block in
+   place. The scene can be thrown away.
 
-`udraw lint src/Model.jl` checks every diagram block in the file. The lint line ends with the
-size, like `96×15`, so a width limit is easy to check. `pad=0` on a box saves two columns.
+The lint line ends with the size, like `96×15`, so a width limit is easy to check. `pad=0` on
+a box saves two columns.
 
-For a one-character fix, editing the text directly and running `udraw lint` is quicker.
+For a one-character fix, editing the text directly and checking it with `udraw render` is
+quicker.
 
 ## Coordinates
 

@@ -87,22 +87,18 @@ KNOWN_ERRORS = Dict(
         end
     end
 
-    @testset "import, edit, put" begin
+    @testset "import a docstring block, edit, render" begin
         mktempdir() do dir
             src = joinpath(dir, "model.jl")
             write(src, "\"\"\"\n    Lag()\n\n```asciiart\n$(example("011"))\n```\n\nText.\n\"\"\"\n")
-            scene = joinpath(dir, "scene.jl")
-            write(scene, UnicodeDrawings.import_file(src, 5))
-            write(scene, replace(read(scene, String), "\"K\"" => "\"K_p\""))
-            UnicodeDrawings.put_scene(scene)
-            @test occursin("in │   K_p   │ out", read(src, String))
-            @test endswith(read(src, String), "```\n\nText.\n\"\"\"\n")
-            # a second edit goes through, a hand edit in between is refused
-            write(scene, replace(read(scene, String), "\"K_p\"" => "\"K_i\""))
-            UnicodeDrawings.put_scene(scene)
-            @test occursin("K_i", read(src, String))
-            write(src, replace(read(src, String), "K_i" => "K_x"))
-            @test_throws ErrorException UnicodeDrawings.put_scene(scene)
+            input = UnicodeDrawings.readinput("$src:5")
+            @test (input.scene, input.dy) == (false, 4)
+            scene = replace(UnicodeDrawings.import_scene(input.text), "\"K\"" => "\"K_p\"")
+            @test occursin("in │   K_p   │ out", render(UnicodeDrawings.runscene(scene, "scene")))
+            # the command line picks the same block
+            out = joinpath(dir, "out.txt")
+            @test redirect_stderr(() -> UnicodeDrawings.main(["render", "$src:5", "-o", out]), devnull) == 0
+            @test read(out, String) == example("011") * "\n"
         end
     end
 

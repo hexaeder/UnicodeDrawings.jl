@@ -1,22 +1,18 @@
 const USAGE = """
-usage: udraw render <scene.jl> [--ruler] [-o <out.txt>]
-       udraw lint   <diagram.txt | scene.jl>
-       udraw ruler  <diagram.txt | scene.jl>
-       udraw locate <diagram.txt | scene.jl> <pattern>
-       udraw png    <diagram.txt | scene.jl> <out.png>
-       udraw import <file>[:<line>] [-o <scene.jl>]
-       udraw put    <scene.jl>
+usage: udraw render <input> [--ruler] [--locate <pattern>] [--png] [-o <out>]
+       udraw import <input> [-o <scene.jl>]
        udraw install-skill
 
-A scene is a Julia file whose last value is a Canvas. `render` prints the diagram and reports
-lint issues on stderr. A diagram file may be plain text or contain a ``` fenced block, in which
-case the first block is used. `-` reads from stdin. `lint` on a source or markdown file checks every diagram block in it.
-Exit status is 1 if lint finds errors.
+<input> is a scene (a Julia file whose last value is a Canvas) or a finished diagram, as a file
+or `-` for stdin. In a file with ``` fenced blocks, such as a docstring or markdown file,
+`file:LINE` picks the block around that line.
 
-`import` turns the diagram block at <line> of a file (a docstring, a markdown file, a plain
-diagram) into a scene. `put` renders that scene and writes it back into the same block.
-`png` renders the diagram as an image, in the bundled JuliaMono font. `install-skill` links
-`skill/` into ~/.claude/skills so Claude finds the guide.
+`render` prints the diagram and reports lint issues on stderr; the exit status is 1 if lint
+finds errors. `--ruler` adds column and row numbers, `--locate` prints the `x y` of each match
+instead of the diagram, and `--png` renders an image, which needs `-o`.
+
+`import` turns a diagram into a scene that reproduces it, to be edited and rendered again.
+`install-skill` links `skill/` into ~/.claude/skills so Claude finds the guide.
 """
 
 """
@@ -24,21 +20,24 @@ diagram) into a scene. `put` renders that scene and writes it back into the same
 
 Evaluate a scene file in a fresh module that has UnicodeDrawings loaded.
 """
-function runscene(path)
+runscene(path) = scene_result(path, m -> Base.include(m, path))
+runscene(code, name) = scene_result(name, m -> Base.include_string(m, code, name))
+
+function scene_result(name, run)
     m = Module(:Scene)
     Core.eval(m, :(using UnicodeDrawings))
-    c = Base.include(m, path)
-    c isa Canvas || error("$path must end with the Canvas, got a $(typeof(c))")
+    c = run(m)
+    c isa Canvas || error("$name must end with the Canvas, got a $(typeof(c))")
     c
 end
 
 # A failing scene is reported as its message plus the scene lines that led there, not as a
 # full stacktrace, followed by what was drawn up to that point.
-function scene_error(path, err)
+function scene_error(name, err)
     e = err isa LoadError ? err.error : err
     println(stderr, "error: ", sprint(showerror, e))
     for fr in stacktrace(catch_backtrace())
-        String(fr.file) == abspath(path) && println(stderr, "  at $(path):$(fr.line)")
+        String(fr.file) in (name, abspath(name)) && println(stderr, "  at $(name):$(fr.line)")
     end
     if LAST_CANVAS[] isa Canvas
         println(stderr, "drawn so far:")
@@ -47,49 +46,101 @@ function scene_error(path, err)
     1
 end
 
-function fenced(str)
-    lines = split(str, '\n')
-    i = findfirst(startswith("```"), lines)
-    isnothing(i) && return str
-    j = something(findnext(startswith("```"), lines, i + 1), length(lines) + 1)
-    join(lines[i+1:j-1], '\n')
+"""
+    readinput(arg) -> NamedTuple
+
+What `arg` names: scene code or a diagram, and a name for messages. For a block of a larger
+file, `dy` and `dx` are its offset in the file, so lint can report file positions.
+"""
+function readinput(arg)
+    m = match(r"^(.*?)(?::(\d+))?$", arg)
+    path = m.captures[1]
+    line = isnothing(m.captures[2]) ? nothing : parse(Int, m.captures[2])
+    text = path == "-" ? read(stdin, String) : read(path, String)
+    name = path == "-" ? "stdin" : path
+    if (path == "-" || endswith(path, ".jl")) && occursin("Canvas()", text)
+        return (; scene=true, text, name, dy=0, dx=0)
+    end
+    lines = split(text, '\n')
+    b = pick_block(lines, line, name)
+    (; scene=false, text=blocktext(lines, b), name, dy=b[1], dx=textwidth(b[3]))
 end
 
-# A scene is a Julia file that makes a Canvas; any other file holds finished diagrams.
-isscene(path) = endswith(path, ".jl") && occursin("Canvas()", read(path, String))
-
-# The diagram text for a scene (rendered) or a text file (as is).
-function diagram(path)
-    isscene(path) && return render(runscene(path))
-    fenced(path == "-" ? read(stdin, String) : read(path, String))
-end
-
-function report(str; io=stderr, name="lint")
-    issues = lintreport(io, str)
+# Lint issues on stderr, at file positions for a block of a larger file.
+function report(str, input)
+    buf = IOBuffer()
+    issues = lintreport(buf, str)
+    out = String(take!(buf))
+    if input.dy > 0
+        out = replace(out, r"^(\d+):(\d+):"m => m -> begin
+            y, x = parse.(Int, split(m[1:end-1], ':'))
+            "$(input.name):$(y + input.dy):$(x + input.dx):"
+        end)
+    end
+    print(stderr, out)
     nerr = count(i -> i.level == :error, issues)
     lines = split(str, '\n')
     size = "$(maximum(textwidth, lines; init=0))×$(length(lines))"
-    println(io, "$name: $nerr errors, $(length(issues) - nerr) warnings, $size")
+    label = input.dy > 0 ? "$(input.name):$(input.dy)" : "lint"
+    println(stderr, "$label: $nerr errors, $(length(issues) - nerr) warnings, $size")
     nerr == 0 ? 0 : 1
 end
 
-# Every diagram block of a source file, with issues reported at their line in the file.
-function lint_file(path)
-    lines = readlines(path)
-    status = 0
-    for b in diagram_blocks(lines)
-        str = blocktext(lines, b)
-        buf = IOBuffer()
-        status = max(status, report(str; io=buf, name="$path:$(b[1])"))
-        out = String(take!(buf))
-        # issue positions are block-relative; shift them to file lines
-        out = replace(out, r"^(\d+):(\d+):"m => m -> begin
-            y, x = parse.(Int, split(m[1:end-1], ':'))
-            "$path:$(y + b[1]):$(x + length(b[3])):"
-        end)
-        print(stderr, out)
+function render_cmd(input, opts)
+    str = if input.scene
+        try
+            render(input.name == "stdin" ? runscene(input.text, "stdin") : runscene(input.name))
+        catch err
+            return scene_error(input.name, err)
+        end
+    else
+        input.text
     end
-    status
+    out = get(opts, "-o", nothing)
+    shown = get(opts, "--ruler", false) ? sprint(ruler, str) : str * "\n"
+    if haskey(opts, "--locate")
+        hits = join(("$x $y\n" for (x, y) in locate(str, opts["--locate"])))
+        isnothing(out) ? print(hits) : write(out, hits)
+    elseif get(opts, "--png", false)
+        isnothing(out) && (println(stderr, "error: --png needs -o <out.png>"); return 2)
+        png(chomp(shown), out)
+    else
+        isnothing(out) ? print(shown) : write(out, shown)
+    end
+    report(str, input)
+end
+
+function import_cmd(input, opts)
+    input.scene && (println(stderr, "error: $(input.name) is a scene already"); return 1)
+    scene = try
+        import_scene(input.text)
+    catch err
+        println(stderr, "error: ", sprint(showerror, err))
+        return 1
+    end
+    from = input.dy > 0 ? "$(input.name):$(input.dy)" : input.name
+    scene = "# imported from $from\n" * scene
+    out = get(opts, "-o", nothing)
+    isnothing(out) ? print(scene) : write(out, scene)
+    0
+end
+
+# Positional arguments and options, or nothing if an option lacks its value.
+function parseargs(args)
+    pos, opts = String[], Dict{String,Any}()
+    i = 1
+    while i <= length(args)
+        a = args[i]
+        if a in ("-o", "--locate")
+            i < length(args) || return nothing
+            opts[a] = args[i+1]
+            i += 2
+        else
+            a in ("--ruler", "--png") ? (opts[a] = true) : push!(pos, a)
+            i += 1
+        end
+    end
+    pos, opts
 end
 
 """
@@ -119,56 +170,19 @@ end
 
 function (@main)(args)
     isempty(args) && (print(stderr, USAGE); return 2)
-    cmd, rest = args[1], args[2:end]
-    if cmd == "render" && !isempty(rest)
-        out = findfirst(==("-o"), rest)
-        str = try
-            render(runscene(rest[1]))
-        catch err
-            return scene_error(rest[1], err)
-        end
-        if "--ruler" in rest
-            ruler(stdout, str)
-        elseif isnothing(out)
-            println(str)
-        else
-            write(rest[out+1], str * "\n")
-        end
-        return report(str)
-    elseif cmd == "import" && !isempty(rest)
-        m = match(r"^(.*?)(?::(\d+))?$", rest[1])
-        scene = try
-            import_file(m.captures[1], isnothing(m.captures[2]) ? nothing : parse(Int, m.captures[2]))
-        catch err
-            println(stderr, "error: ", sprint(showerror, err))
-            return 1
-        end
-        out = findfirst(==("-o"), rest)
-        isnothing(out) ? print(scene) : write(rest[out+1], scene)
-    elseif cmd == "put" && length(rest) == 1
-        path, line, new = try
-            put_scene(rest[1])
-        catch err
-            return scene_error(rest[1], err)
-        end
-        println(stderr, "wrote $path:$line")
-        return report(new)
-    elseif cmd == "lint" && length(rest) == 1
-        path = rest[1]
-        return path == "-" || isscene(path) ? report(diagram(path)) : lint_file(path)
-    elseif cmd == "ruler" && length(rest) == 1
-        ruler(stdout, diagram(rest[1]))
-    elseif cmd == "png" && length(rest) == 2
-        png(diagram(rest[1]), rest[2])
-    elseif cmd == "install-skill" && isempty(rest)
-        return install_skill()
-    elseif cmd == "locate" && length(rest) == 2
-        for (x, y) in locate(diagram(rest[1]), rest[2])
-            println("$x $y")
-        end
-    else
+    cmd = args[1]
+    cmd == "install-skill" && length(args) == 1 && return install_skill()
+    parsed = parseargs(args[2:end])
+    if cmd ∉ ("render", "import") || isnothing(parsed) || length(parsed[1]) != 1
         print(stderr, USAGE)
         return 2
     end
-    return 0
+    pos, opts = parsed
+    input = try
+        readinput(only(pos))
+    catch err
+        println(stderr, "error: ", sprint(showerror, err))
+        return 1
+    end
+    cmd == "render" ? render_cmd(input, opts) : import_cmd(input, opts)
 end
