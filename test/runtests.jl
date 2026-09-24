@@ -80,6 +80,13 @@ KNOWN_ERRORS = Dict(
         end
     end
 
+    @testset "large diagrams import with few fix-ups" begin
+        # the two in 103 are axis ticks, which only `stroke!` draws
+        for (n, most) in ["101" => 0, "102" => 0, "103" => 2]
+            @test nfixups(UnicodeDrawings.import_scene(example(n))) <= most
+        end
+    end
+
     @testset "import, edit, put" begin
         mktempdir() do dir
             src = joinpath(dir, "model.jl")

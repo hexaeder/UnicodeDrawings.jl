@@ -2,7 +2,7 @@
 
 A small Julia tool that lets Claude draw box-drawing diagrams like the ones in PowerDynamics and
 NetworkDynamics docstrings. Claude writes a list of primitives, the tool renders them to text (and
-PNG via `tools/screenshot.sh`). The column arithmetic is the part a language model gets wrong, so
+PNG via `udraw png`). The column arithmetic is the part a language model gets wrong, so
 the tool does it.
 
 `README.md` has the idea in more detail and `examples/` holds the collected diagrams.
@@ -14,6 +14,7 @@ the tool does it.
   `parse_text` reads a finished diagram back, and `render` writes one.
 - `src/draw.jl`: the primitives (`box!`, `wire!`, `text!`, `mark!`, `arrow!`, `stroke!`).
 - `src/lint.jl`: `lint`, `ruler`, `locate`.
+- `src/png.jl`: diagram → SVG → PNG with `resvg_jll` and the vendored JuliaMono in `assets/`.
 - `src/import.jl`: diagram → scene (`import_scene`), and the `import`/`put` round trip on
   fenced blocks in files. Guesses are checked by drawing them; leftovers become fix-ups.
 - `src/cli.jl`: `main`, run by `bin/udraw` or the installed `udraw` app through

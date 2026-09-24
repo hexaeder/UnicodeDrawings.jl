@@ -3,6 +3,7 @@ usage: udraw render <scene.jl> [--ruler] [-o <out.txt>]
        udraw lint   <diagram.txt | scene.jl>
        udraw ruler  <diagram.txt | scene.jl>
        udraw locate <diagram.txt | scene.jl> <pattern>
+       udraw png    <diagram.txt | scene.jl> <out.png>
        udraw import <file>[:<line>] [-o <scene.jl>]
        udraw put    <scene.jl>
        udraw install-skill
@@ -14,7 +15,8 @@ Exit status is 1 if lint finds errors.
 
 `import` turns the diagram block at <line> of a file (a docstring, a markdown file, a plain
 diagram) into a scene. `put` renders that scene and writes it back into the same block.
-`install-skill` links `skill/` into ~/.claude/skills so Claude finds the guide.
+`png` renders the diagram as an image, in the bundled JuliaMono font. `install-skill` links
+`skill/` into ~/.claude/skills so Claude finds the guide.
 """
 
 """
@@ -156,6 +158,8 @@ function (@main)(args)
         return path == "-" || isscene(path) ? report(diagram(path)) : lint_file(path)
     elseif cmd == "ruler" && length(rest) == 1
         ruler(stdout, diagram(rest[1]))
+    elseif cmd == "png" && length(rest) == 2
+        png(diagram(rest[1]), rest[2])
     elseif cmd == "install-skill" && isempty(rest)
         return install_skill()
     elseif cmd == "locate" && length(rest) == 2

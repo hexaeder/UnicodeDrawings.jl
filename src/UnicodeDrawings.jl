@@ -1,6 +1,6 @@
 module UnicodeDrawings
 
-export Canvas, render, parse_text, lint, lintreport, ruler, locate
+export Canvas, render, parse_text, lint, lintreport, ruler, locate, png
 export box!, tf!, wire!, hline!, vline!, stroke!, erase!, text!, mark!, arrow!,
        insertcols!, insertrows!
 
@@ -9,6 +9,7 @@ include("canvas.jl")
 include("draw.jl")
 include("lint.jl")
 include("import.jl")
+include("png.jl")
 include("cli.jl")
 
 Base.show(io::IO, ::MIME"text/plain", c::Canvas) = print(io, render(c))

@@ -1,10 +1,16 @@
 name = "UnicodeDrawings"
 uuid = "86195ca4-a416-4d0d-bdf0-e07ea36c7c37"
-authors = ["Hans Würfel"]
 version = "0.1.0"
-
-[apps]
-udraw = {}
+authors = ["Hans Würfel"]
 
 [workspace]
 projects = ["test"]
+
+[deps]
+resvg_jll = "acccf2be-895d-5fd8-88d3-4be6fc0b64a1"
+
+[compat]
+julia = "1.12"
+resvg_jll = "0.45.1"
+
+[apps.udraw]

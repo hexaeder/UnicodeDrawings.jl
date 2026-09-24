@@ -9,7 +9,7 @@ You write a scene, a short Julia file with primitives in it. The tool puts the c
 grid, merges crossing strokes into the right junctions and checks the result.
 
 `udraw` is a Pkg app that runs from `~/.julia/dev/UnicodeDrawings`. Paths below, like
-`scenes/011.jl` and `tools/screenshot.sh`, are relative to that directory.
+`scenes/011.jl`, are relative to that directory.
 
 ## Workflow
 
@@ -20,7 +20,7 @@ grid, merges crossing strokes into the right junctions and checks the result.
 3. To fix placement, `udraw render scene.jl --ruler` shows column and row numbers, and
    `udraw locate out.txt '┤'` gives the exact `x y` of each match. Use `locate`, not the
    ruler, when you need a column number. Counting columns off the ruler is easy to get wrong.
-4. For overall balance, `tools/screenshot.sh out.txt out.png` renders a PNG.
+4. For overall balance, `udraw png out.txt out.png` renders a PNG you can look at.
 
 `udraw lint file.txt` checks a diagram that was drawn by hand. If the file has a ```` ``` ````
 fence, only the first fenced block is checked.
