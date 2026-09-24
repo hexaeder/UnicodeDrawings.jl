@@ -102,7 +102,9 @@ A transfer-function block: `num` over `den` with a fraction bar on row `y`, so t
 a signal wire drawn along `y`. `x` is the left edge, and the block spans rows `y-2` to `y+2`.
 """
 function tf!(c::Canvas, x, y, num, den; line=:round, pad=1)
-    b = box!(c, x, y - 2; label="$num\n\n$den", line, pad)
+    inner = max(textwidth(num), textwidth(den)) + 2pad
+    inner < 2 && (inner += 2)                 # room for the bar, `╶╴` at least
+    b = box!(c, x, y - 2, inner + 2, 5; label="$num\n\n$den", line, pad)
     hline!(c, b.left + 1, b.right - 1, y)
     b
 end
@@ -238,31 +240,60 @@ insertcols!(c::Canvas, x, n) = _insert!(c, x, n, E)
 
 function _insert!(c::Canvas, at, n, d)
     k = d == E ? 1 : 2                        # the coordinate that moves
-    shifted(p) = p[k] >= at ? (d == E ? (p[1] + n, p[2]) : (p[1], p[2] + n)) : p
-    # a phrase that straddles the cut stays in one piece where it is
-    keep = Set{Tuple{Int,Int}}()
-    for (p, cell) in c.cells
-        (istext(cell) && p[k] == at - 1) || continue
-        step1(q, s) = d == E ? (q[1] + s, q[2]) : (q[1], q[2] + s)
-        run, q = Tuple{Int,Int}[], step1(p, 1)
-        while istext(c[q...]) || (!isstroke(c[q...]) && istext(c[step1(q, 1)...]) && d == E)
-            push!(run, q)
-            q = step1(q, 1)
+    step(p, dir, s=1) = (p[1] + s * OFFSETS[dir][1], p[2] + s * OFFSETS[dir][2])
+    # Text sitting on a line across the cut, like an arrowhead on a vertical wire, has to move
+    # with that line. So does text stacked onto such a cell, like the `Σ` above the arrow.
+    across = d == E ? (N, S) : (W, E)
+    anchored = Set(p for (p, cell) in c.cells if istext(cell) &&
+                   any(dir -> c[step(p, dir)...].arms[opposite(dir)] != NONE, across))
+    todo = collect(anchored)
+    while !isempty(todo)
+        p = pop!(todo)
+        for dir in across
+            q = step(p, dir)
+            istext(c[q...]) && q ∉ anchored && (push!(anchored, q); push!(todo, q))
         end
-        union!(keep, run)
     end
-    moved = Dict((p in keep ? p : shifted(p)) => cell for (p, cell) in c.cells)
-    others = unique(p[3-k] for p in keys(c.cells))
-    for o in others
-        pos(i) = k == 1 ? (i, o) : (o, i)
-        l, r = c[pos(at - 1)...], c[pos(at)...]
-        lw = isstroke(l) ? l.arms[d] : istext(l) && isstroke(c[pos(at - 2)...]) ? c[pos(at - 2)...].arms[d] : NONE
-        rw = isstroke(r) ? r.arms[opposite(d)] : istext(r) && isstroke(c[pos(at + 1)...]) ? c[pos(at + 1)...].arms[opposite(d)] : NONE
-        (lw != NONE && lw == rw) || continue
+    # Each row gets its own cut. Where the cut splits a phrase, the phrase stays in one piece
+    # and the row is cut after it, unless the phrase holds an anchored cell. Then the row is cut
+    # before the word with that cell, so the word moves along with it.
+    function rowcut(pos)
+        istext(c[pos(at - 1)...]) || return at
+        wordgap(i) = d == E && !isstroke(c[pos(i)...]) && istext(c[pos(i + 1)...])
+        i = at
+        while pos(i) ∉ anchored && (istext(c[pos(i)...]) || wordgap(i))
+            i += 1
+        end
+        pos(i) in anchored || return i
+        while istext(c[pos(i - 1)...]) && pos(i - 1) ∉ anchored
+            i -= 1
+        end
+        i
+    end
+    posfn(o) = k == 1 ? (i -> (i, o)) : (i -> (o, i))
+    cuts = Dict(o => rowcut(posfn(o)) for o in unique(p[3-k] for p in keys(c.cells)))
+    moved = Dict((p[k] >= cuts[p[3-k]] ? (d == E ? (p[1] + n, p[2]) : (p[1], p[2] + n)) : p) => cell
+                 for (p, cell) in c.cells)
+    # The line that points across the gap from one side: a stroke's arm, or the stroke just
+    # behind a one-cell mark like `●`.
+    function arm(p, dir)
+        cell = c[p...]
+        isstroke(cell) && return cell.arms[dir]
+        behind = c[step(p, dir, -1)...]
+        istext(cell) && isstroke(behind) ? behind.arms[dir] : NONE
+    end
+    for (o, g) in cuts
+        pos = posfn(o)
+        l, r = c[pos(g - 1)...], c[pos(g)...]
+        lw, rw = arm(pos(g - 1), d), arm(pos(g), opposite(d))
+        # a line runs on across the gap if the other side continues it or is text it runs into
+        w = lw != NONE && (lw == rw || (rw == NONE && istext(r))) ? lw :
+            rw != NONE && lw == NONE && istext(l) ? rw : NONE
+        w == NONE && continue
         style = isstroke(l) && l.style in (DASH2, DASH3, DASH4) ? l.style : SOLID
-        arms = d == E ? Arms(NONE, lw, NONE, lw) : Arms(lw, NONE, lw, NONE)
+        arms = d == E ? Arms(NONE, w, NONE, w) : Arms(w, NONE, w, NONE)
         for j in 0:n-1
-            moved[pos(at + j)] = Cell(arms, style, "")
+            moved[pos(g + j)] = Cell(arms, style, "")
         end
     end
     empty!(c.cells)

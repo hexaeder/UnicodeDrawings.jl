@@ -38,6 +38,10 @@ KNOWN_ERRORS = Dict(
         b = tf!(c, 1, 3, "K", "1 + s T")
         @test (b.left, b.right, b.top, b.bottom) == (1, 11, 1, 5)
         @test split(render(c), '\n')[3] == "│╶───────╴│"
+        # one-character terms with pad=0 still leave room for the bar
+        c = Canvas()
+        tf!(c, 1, 3, "s", "1"; pad=0)
+        @test render(c) == "╭───╮\n│ s │\n│╶─╴│\n│ 1 │\n╰───╯"
     end
 
     @testset "insert and clear" begin
@@ -50,6 +54,14 @@ KNOWN_ERRORS = Dict(
         c = parse_text("│\n┴")
         insertrows!(c, 2, 1)
         @test render(c) == "│\n│\n┴"
+        # an arrowhead and the sum on it move with their vertical wire, the sign next to it too,
+        # and the wire running into the sum stretches
+        sum = "╶──→(Σ)────╴\n    +↑+\n     │\n╶────╯"
+        for x in 4:6
+            c = parse_text(sum)
+            insertcols!(c, x, 3)
+            @test render(c) == "╶─────→(Σ)────╴\n       +↑+\n        │\n╶───────╯"
+        end
         c = Canvas()
         hline!(c, 1, 10, 2; cap=:full)
         box!(c, 4, 1; label="LV", pad=0, clear=true)
