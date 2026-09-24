@@ -32,6 +32,7 @@ if ccall(:jl_generating_output, Cint, ()) == 1
         ruler(devnull, s)
         locate(s, "●")
         import_scene(s; check=false)
+        apidocs(devnull)
     end
     precompile(main, (Vector{String},))
 end

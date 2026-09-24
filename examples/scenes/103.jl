@@ -1,7 +1,5 @@
 # WTGWGO_A figure (EPRI 3002027129, Figure 4-26), as implemented: the voltage filter and the
 # box with Pref_out through one dip.
-# Copied from PowerDynamicsLibrary docs/resources/WTGWGO_A/fig4-26_scene.jl. Reproduces the
-# WTGWGO_A docstring block (examples/103).
 
 c = Canvas()
 

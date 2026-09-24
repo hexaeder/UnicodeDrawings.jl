@@ -1,12 +1,6 @@
-# The diagram inside an example file: the fenced block after the `# source:` header.
-function load_example(path)
-    lines = readlines(path)
-    i = findfirst(startswith("```"), lines)
-    isnothing(i) && return join(lines[2:end], '\n')
-    j = findnext(startswith("```"), lines, i + 1)
-    join(lines[i+1:j-1], '\n')
-end
-example(num) = load_example(only(filter(startswith(num), readdir(EXDIR; join=false))) |> f -> joinpath(EXDIR, f))
+# Each example file holds one diagram, nothing else.
+load_example(path) = read(path, String)
+example(num) = load_example(joinpath(EXDIR, "$num.txt"))
 EXDIR = joinpath(@__DIR__, "..", "examples")
 EXFILES = filter(endswith(".txt"), readdir(EXDIR; join=true))
 

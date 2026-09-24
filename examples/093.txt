@@ -1,0 +1,7 @@
+
+ideal v source      Resistor     Capacitor
+            v1 o─←────MMM────→─o v2
+               │               ┴
+              (↗)              ┬
+               │               │
+               ⏚               ⏚

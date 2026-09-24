@@ -1,8 +1,0 @@
-# source: PowerDynamics/src/Library/building_blocks.jl:649-655
-```asciiart
-    ╭─────────╮
- in │   s K   │ out
-╶───┤╶───────╴├────╴
-    │ 1 + s T │
-    ╰─────────╯
-```

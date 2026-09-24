@@ -1,0 +1,7 @@
+       u_device     Impedance    u_bus
+                ●──────████──→───●──←───
+                │       i_device    i_grid
+voltage source (↗)
+                │
+                │
+                ⏚

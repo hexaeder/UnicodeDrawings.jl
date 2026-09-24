@@ -1,0 +1,14 @@
+# extract the powerflow model                # ⎫                 ⎫
+pfnw = powerflow_model(nw)                   # │                 │
+# starting guess for the powerflow           # ⎬ solve_powerflow │
+pfs0 = NWState(pfnw)                         # │                 │
+# solve the algebraic network                # │                 │
+pfs = find_fixpoint(pfnw, pfs0)              # ⎭                 ⎬ initialize_from_pf[!]
+# extract the interface (u/i) values         #                   │
+interf = interface_values(pfs)               #                   │
+# initialize every component around them     #                   │
+s0 = initialize_componentwise[!](            #                   │
+    nw; default_overrides = interf           #                   │
+)                                            #                   │
+# verify the per-unit bases                  #                   │
+check_base_consistency(s0)                   #                   ⎭

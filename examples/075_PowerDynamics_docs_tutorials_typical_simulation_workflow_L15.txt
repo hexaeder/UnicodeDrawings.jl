@@ -1,9 +1,0 @@
-# source: PowerDynamics/docs/tutorials/typical_simulation_workflow.jl:15-22
-```asciiart
-    ╭───────╮
-2 ┯━┿       ┿━┯ 3
-  ↓ │   ╭───╯ ↓
-    ┷━┯━┷ 1
-      │
-     (~)
-```

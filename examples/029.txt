@@ -1,0 +1,5 @@
+    SomePackage@1.2.4
+                ╷ ╷ ╷
+                │ │ ╰───╴ Patch — small non-breaking fix
+                │ ╰─────╴ Minor — non-breaking new feature
+                ╰───────╴ Major — breaking change

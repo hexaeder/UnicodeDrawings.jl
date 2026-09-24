@@ -1,6 +1,4 @@
 # Full REEC_C figure (EPRI 3002027129, Figure 4-7 with the storage part of Figure 4-12).
-# Copied from PowerDynamicsLibrary docs/resources/REEC_C/fig4-7_scene.jl. Reproduces the REEC_C
-# docstring block (examples/101) up to its leading empty rows.
 
 # PI block `kp + ki/s` as a fraction, wire along y, clamp limits in the __/ notation, state
 # label under the right corner

@@ -1,6 +1,7 @@
 const USAGE = """
 usage: udraw render <input> [--ruler] [--locate <pattern>] [--png] [-o <out>]
        udraw import <input> [-o <scene.jl>]
+       udraw help [<name>]
        udraw install-skill
 
 <input> is a scene (a Julia file whose last value is a Canvas) or a finished diagram, as a file
@@ -12,7 +13,8 @@ finds errors. `--ruler` adds column and row numbers, `--locate` prints the `x y`
 instead of the diagram, and `--png` renders an image, which needs `-o`.
 
 `import` turns a diagram into a scene that reproduces it, to be edited and rendered again.
-`install-skill` links `skill/` into ~/.claude/skills so Claude finds the guide.
+`help` prints the reference for writing scenes, taken from the docstrings, or the entry
+for one `<name>` like `box!`. `install-skill` links `skill/` into ~/.claude/skills so Claude finds the guide.
 """
 
 """
@@ -144,6 +146,46 @@ function parseargs(args)
 end
 
 """
+    apidocs(io, name=nothing)
+
+The docstrings of the public API: the drawing part (`Canvas`, `Box` and the `!` functions) first,
+then the rest, each in source order. With `name`, just that entry.
+"""
+function apidocs(io::IO, name=nothing)
+    m = @__MODULE__
+    meta = Base.Docs.meta(m)
+    entries = []
+    for s in (names(m)..., :Box)
+        b = Base.Docs.Binding(m, s)
+        haskey(meta, b) || continue
+        for d in values(meta[b].docs)
+            text = join(d.text)
+            # a docstring shared by two names (hline!, vline!) is printed once
+            any(e -> e.text == text, entries) && continue
+            startswith(text, "    ") || (text = "    $s\n\n" * text)
+            drawing = s in (:Canvas, :Box) || endswith(string(s), "!")
+            push!(entries, (; s, text, drawing, pos=(!drawing, string(d.data[:path]), d.data[:linenumber])))
+        end
+    end
+    if !isnothing(name)
+        # a shared docstring is found by any of the signatures it starts with
+        signs(l) = l == "    $name" || startswith(l, "    $name(")
+        e = filter(e -> any(signs, split(e.text, '\n')), entries)
+        isempty(e) && (println(io, "no entry for $name"); return 1)
+        foreach(x -> println(io, x.text), e)
+        return 0
+    end
+    sort!(entries; by=e -> e.pos)
+    println(io, "# Drawing\n\nA scene is Julia code: `c = Canvas()`, then the calls below, and `c` as the last value.\n")
+    for (i, e) in enumerate(entries)
+        i > 1 && e.drawing != entries[i-1].drawing &&
+            println(io, "# Julia API\n\nFor using the package from Julia rather than through `udraw`.\n")
+        println(io, e.text)
+    end
+    return 0
+end
+
+"""
     install_skill(dir) -> Int
 
 Link `skill/` in the package into Claude's skill directory. It is a symlink, so the installed
@@ -168,10 +210,22 @@ function install_skill(dir=joinpath(homedir(), ".claude", "skills"))
     return 0
 end
 
+# `udraw help | head` closes the pipe early, which is not an error.
 function (@main)(args)
+    try
+        udraw(args)
+    catch err
+        err isa Base.IOError && err.code == Base.UV_EPIPE || rethrow()
+        0
+    end
+end
+
+function udraw(args)
     isempty(args) && (print(stderr, USAGE); return 2)
     cmd = args[1]
     cmd == "install-skill" && length(args) == 1 && return install_skill()
+    cmd == "help" && length(args) <= 2 && return apidocs(stdout, get(args, 2, nothing))
+    cmd in ("-h", "--help") && (print(USAGE); return 0)
     parsed = parseargs(args[2:end])
     if cmd ∉ ("render", "import") || isnothing(parsed) || length(parsed[1]) != 1
         print(stderr, USAGE)

@@ -1,8 +1,0 @@
-# source: PowerDynamics/src/Library/building_blocks.jl:725-731
-```asciiart
-        │    ╱
-   uMin │   ╱
-─────┼╼━┿━╾┼─────
-    ╱   │ uMax
-   ╱    │
-```

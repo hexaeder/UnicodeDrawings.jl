@@ -1,9 +1,0 @@
-# source: PowerDynamics/docs/tutorials/custom_bus.jl:17-24
-```asciiart
-            ┌───────────────────┐
-terminal    │                   │
-   o←───────┤ Machine Equations │
-u_r, u_i    │                   │
-i_r, i_i    └───────────────────┘
-
-```

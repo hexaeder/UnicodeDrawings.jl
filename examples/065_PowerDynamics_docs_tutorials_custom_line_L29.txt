@@ -1,8 +1,0 @@
-# source: PowerDynamics/docs/tutorials/custom_line.jl:29-35
-```asciiart
-      ┌───────────┐
-(src) │           │ (dst)
-  o←──┤  Branch   ├──→o
-      │           │
-      └───────────┘
-```

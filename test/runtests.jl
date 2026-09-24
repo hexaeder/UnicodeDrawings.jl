@@ -90,7 +90,7 @@ KNOWN_ERRORS = Dict(
     @testset "import a docstring block, edit, render" begin
         mktempdir() do dir
             src = joinpath(dir, "model.jl")
-            write(src, "\"\"\"\n    Lag()\n\n```asciiart\n$(example("011"))\n```\n\nText.\n\"\"\"\n")
+            write(src, "\"\"\"\n    Lag()\n\n```\n$(example("011"))```\n\nText.\n\"\"\"\n")
             input = UnicodeDrawings.readinput("$src:5")
             @test (input.scene, input.dy) == (false, 4)
             scene = replace(UnicodeDrawings.import_scene(input.text), "\"K\"" => "\"K_p\"")
@@ -98,8 +98,18 @@ KNOWN_ERRORS = Dict(
             # the command line picks the same block
             out = joinpath(dir, "out.txt")
             @test redirect_stderr(() -> UnicodeDrawings.main(["render", "$src:5", "-o", out]), devnull) == 0
-            @test read(out, String) == example("011") * "\n"
+            @test read(out, String) == example("011")
         end
+    end
+
+    @testset "help from docstrings" begin
+        all = sprint(UnicodeDrawings.apidocs)
+        # drawing first, each shared docstring once
+        @test findfirst("    box!(", all) < findfirst("# Julia API", all) < findfirst("    lint(", all)
+        @test count("    vline!(", all) == 1
+        one = sprint(io -> UnicodeDrawings.apidocs(io, "vline!"))
+        @test occursin("hline!(", one) && !occursin("box!(", one)
+        @test UnicodeDrawings.apidocs(devnull, "nope") == 1
     end
 
     @testset "scene $n" for n in SCENES

@@ -1,6 +1,0 @@
-# source: NetworkDynamics/src/linear_analysis_base.jl:370-374
-```asciiart
-    u ──►(+)──► sys1 ────┬──► y
-          ▲∓             │
-          └──── sys2 ◄───┘
-```

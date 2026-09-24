@@ -1,6 +1,0 @@
-# source: NetworkDynamics/docs/src/mtk_integration.md:183-187
-```
-   u┌───────┐y
-  ─→┤ 0 ~ u ├→─
-    └───────┘
-```

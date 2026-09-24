@@ -1,0 +1,35 @@
+╭────────────────────────╮ ╭────────────────────────────╮
+│ Pure MTK Model         │ │ PowerDynamics.jl Model     │
+╞════════════════════════╡ ╞════════════════════════════╡
+│ Equation-based model   │ │ Composite Model consisting │
+│ of the entire system.  │ │ of equation-based MTK      │
+╰─────────────────────┬──╯ │ models for Buses and Lines │
+                      │    │         ╭───────╮          │
+                      │    │     2 ┯━┿       ┿━┯ 3      │
+                      │    │       ↓ │   ╭───╯ ↓        │
+                      │    │         ┷━┯━┷ 1            │
+                      │    │          (~)               │
+                      │    ╰──────┬─────────────────────╯
+  ModelingToolkit.jl  │           │  PowerDynamics.jl
+           generates  ▾           ▾  generates
+                  ╭───┴───────────┴───╮
+                  │ DAE System        │
+                  │ M ̇x = f(x, p, t)  │
+                  ╰─────────┬─────────╯
+RHS function + Mass Matrix  ▾
+      ╭─────────────────────┴─────────────────────╮
+      │ SciML-ODEProblem                          │
+      │ Data structure for time-domain simulation │
+      ╰─────────────────────┬─────────────────────╯
+  OrdinaryDiffEq.jl solver  ▾
+     ╭──────────────────────┴──────────────────────╮
+     │ SciML-ODESolution                           │
+     │ Solution object containing the time series  │
+     │ for all components                          │
+     ╰──────────────────────┬──────────────────────╯
+         Symbolic Indexing  ▾
+ ╭──────────────────────────┴──────────────────────────╮
+ │ Time-series Inspection                              │
+ │ Symbolic indexing allows for easy access to all     │
+ │ states of all subcomponents for detailed analysis.  │
+ ╰─────────────────────────────────────────────────────╯

@@ -1,9 +1,9 @@
 # UnicodeDrawings
 
-A small Julia tool that lets Claude draw box-drawing diagrams like the ones in PowerDynamics and
-NetworkDynamics docstrings. Claude writes a list of primitives, the tool renders them to text (and
-PNG via `udraw png`). The column arithmetic is the part a language model gets wrong, so
-the tool does it.
+A small Julia tool that lets Claude draw box-drawing diagrams for docstrings and markdown.
+Claude writes a list of primitives, the tool renders them to text (and PNG via
+`udraw render --png`). The column arithmetic is the part a language model gets wrong, so the
+tool does it.
 
 `README.md` is the overview for users, and `examples/` holds the collected diagrams.
 
@@ -17,9 +17,9 @@ the tool does it.
 - `src/png.jl`: diagram → SVG → PNG with `resvg_jll` and the vendored JuliaMono in `assets/`.
 - `src/import.jl`: diagram → scene (`import_scene`), and finding fenced blocks in files.
   Guesses are checked by drawing them; leftovers become fix-ups.
-- `src/cli.jl`: `main` with `render` and `import`, run by `bin/udraw` or the installed `udraw` app through
-  `julia -m UnicodeDrawings`.
-- `examples/scenes/NNN.jl` reproduce `examples/NNN_*`.
+- `src/cli.jl`: `main` with `render`, `import` and `help` (the docstrings of the exports), run
+  by `bin/udraw` or the installed `udraw` app through `julia -m UnicodeDrawings`.
+- `examples/scenes/NNN.jl` reproduce `examples/NNN.txt`.
 - `skill/SKILL.md` is the guide for Claude. `udraw install-skill` symlinks the directory into
   `~/.claude/skills`, so the installed skill is this file.
 
@@ -32,4 +32,3 @@ startup cost on every call, which the precompile workload at the end of the modu
 
 - Target list is done (011 013 055 005 007 074 079 053 098 072 008). More scenes from
   `examples/` will show which primitives are missing (braces `⎫⎬⎭`, diagonals `╱`).
-- Lint the diagrams in the PowerDynamics/NetworkDynamics docstrings directly from the source files.

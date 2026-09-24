@@ -1,0 +1,4 @@
+        bus 1          bus 2
+          ╻              ╻
+  (═)╶────╂──────────────╂───╴(~)
+swing-eqs ╹   pi-line    ╹ slack/infinite bus

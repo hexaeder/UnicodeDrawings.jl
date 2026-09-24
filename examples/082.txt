@@ -1,0 +1,6 @@
+       ┊
+    ┄┄┄◯   ● injector 1
+      ╱ ╲ ╱
+   ┄┄◯╶─╴◯╶─╴● injector 2
+     ┊    ╲
+           ● injector 3

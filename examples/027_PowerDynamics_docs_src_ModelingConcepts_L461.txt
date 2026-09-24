@@ -1,8 +1,0 @@
-# source: PowerDynamics/docs/src/ModelingConcepts.md:461-467
-```asciiart
-          ┌───────────┐
- u_bus ──→│           │  (t)
-          │  LineEnd  ├───o
-i_line ←──│           │
-          └───────────┘
-```

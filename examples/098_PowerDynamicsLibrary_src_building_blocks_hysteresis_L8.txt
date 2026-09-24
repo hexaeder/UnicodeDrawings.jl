@@ -1,9 +1,0 @@
-# source: PowerDynamicsLibrary/src/building_blocks/hysteresis.jl:8-15
-```asciiart
- out
-  1 ┤   ┌──◂──┬─────
-    │   ▾     ▴
-  0 ┼───┴──▸──┘
-    └───┴─────┴───── in
-       off    on
-```

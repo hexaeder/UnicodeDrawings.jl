@@ -1,6 +1,0 @@
-# source: PowerDynamics/docs/examples/ieee39_part1.jl:190-194
-```asciiart
-(t) ┌──────────┐
- o──┤ ZIP Load │
-    └──────────┘
-```

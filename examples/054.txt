@@ -1,0 +1,11 @@
+               ╭────────────────┬───────────╮
+               │        voltage │ u out     │
+┏━━━━━━━━━━━━━━▽━━┓   ╔═════════△════════╗  │   ╔═══════════════╗
+┃ Rest of Network ┃   ║ VertexModel:     ║  ╰───▷ Vertex-Model: ║
+┃ - voltage in    ┃   ║  Shunt-Model     ║      ║  Device       ║
+┃ - current out   ┃   ║ - current sum in ║      ║ - voltage in  ║
+┗━━━━━━━━━━━━━━▽━━┛   ║ - voltage out    ║  ╭───◁ - current out ║
+               │      ╚═════════△════════╝  │   ╚═══════════════╝
+       current │ i out        ╭─┴─╮         │  (direct connection via loopback)
+               ╰──────────────▷ + ◁─────────╯
+                              ╰───╯

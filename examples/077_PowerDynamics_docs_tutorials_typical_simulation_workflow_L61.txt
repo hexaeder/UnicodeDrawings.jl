@@ -1,9 +1,0 @@
-# source: PowerDynamics/docs/tutorials/typical_simulation_workflow.jl:61-68
-```asciiart
-┌───────────────────────────────┐
-│BusModel                       │
-│┌────────┐   ┌────────────────┐│
-││ BusBar ├─o─┤ Droop inverter ││
-│└────────┘   └────────────────┘│
-└───────────────────────────────┘
-```

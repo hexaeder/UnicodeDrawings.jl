@@ -1,9 +1,9 @@
 # UnicodeDrawings
 
-A small Julia tool for drawing box diagrams out of Unicode box-drawing characters, like the
-ones in the PowerDynamics and NetworkDynamics docstrings. It is mainly meant to be used by
-Claude, which gets the characters right but tends to put them a column off. It works just as
-well by hand.
+A small Julia tool for drawing diagrams out of Unicode box-drawing characters: block diagrams,
+signal flow and component sketches for docstrings, markdown and plain text. It is mainly meant
+to be used by Claude, which gets the characters right but tends to put them a column off. It
+works just as well by hand.
 
 ## Installation
 
@@ -67,14 +67,14 @@ The primitives:
 | `stroke!(c, x, y, '┤')` | a single box character, for details like axis ticks |
 
 Boxes and wires come in `:light`, `:round`, `:heavy` and `:double` line styles, and dashed.
-`skill/SKILL.md` has the full description, with all options and the conventions of the
-existing diagrams.
+`udraw help` prints the full reference with all options, taken from the docstrings.
 
 ## Usage
 
 ```
 udraw render <input> [--ruler] [--locate <pattern>] [--png] [-o <out>]
 udraw import <input> [-o <scene.jl>]
+udraw help [<name>]
 ```
 
 - `udraw render scene.jl` prints the diagram, and any problems it found on stderr.
@@ -87,13 +87,34 @@ udraw import <input> [-o <scene.jl>]
 The input can also be a finished diagram, a file or `-` for stdin. For a Julia source or
 markdown file, `file:LINE` picks the diagram block around that line.
 
+## Tip: diagrams in Documenter.jl
+
+Documenter shows a code block with a border, a background and a copy button, which a diagram
+doesn't need. Give the diagram blocks their own language, say ` ```asciiart `, and hide the
+decoration with a little CSS in `docs/src/assets/custom.css`:
+
+```css
+pre:has(.language-asciiart) {
+  border: none !important;
+  background: none !important;
+  line-height: 1.2;
+}
+pre:has(.language-asciiart) button {
+  display: none;
+}
+```
+
+Load it with `format = Documenter.HTML(assets = ["assets/custom.css"])` in `docs/make.jl`.
+
 ## Repository
 
 - `src/`: the package. `canvas.jl` and `glyphs.jl` hold the grid, `draw.jl` the primitives,
   `lint.jl` the checks, `import.jl` the import, `png.jl` the image output and `cli.jl` the
   command line.
 - `skill/SKILL.md`: the guide for Claude.
-- `examples/`: 99 diagrams collected from PowerDynamics, NetworkDynamics and
-  PowerDynamicsLibrary, each with its source location. `examples/scenes/` has scenes that
-  reproduce 17 of them exactly. Together they are the test suite.
+- `examples/`: 99 diagrams collected from the documentation of a few Julia packages.
+  `examples/scenes/` has scenes that reproduce 17 of them exactly. Together they are the test
+  suite.
 - `assets/`: the JuliaMono font with its license (SIL Open Font License 1.1).
+
+The package is MIT licensed, see `LICENSE`.

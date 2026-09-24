@@ -1,7 +1,5 @@
 # Full REGC_C figure (EPRI 3002027129, Figure 4-3), as implemented. The E box and the rotation
 # work in the PLL frame.
-# Copied from PowerDynamicsLibrary docs/resources/REGC_C/fig4-3_scene.jl. Reproduces the REGC_C
-# docstring block (examples/102) up to its empty first row.
 
 # PI block `kp + ki/s` as a fraction, wire along y, clamp limits in the __/ notation, state
 # label under the right corner

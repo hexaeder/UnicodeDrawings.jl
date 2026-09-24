@@ -1,0 +1,7 @@
+VIndex(  1,    :symbolic_swing₊ω)
+VIndex(:swing, :symbolic_swing₊θ)
+       ╶─┬──╴  ╶───────┬───────╴
+         ╵             │
+Index/name of vertex   │
+                       ╵
+         Name of parameter/state

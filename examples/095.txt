@@ -1,0 +1,8 @@
+    (system with input forcing)
+          ua┌─────────┐ya
+        ┌──→┤  0 ~ ua ├→──┐
+        │   └─────────┘   │
+        │ yb┌─────────┐ub │
+        └──←┤ yb ~ ub ├←──┘
+            └─────────┘
+(system with input feed forward)
