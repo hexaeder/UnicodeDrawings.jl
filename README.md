@@ -1,183 +1,99 @@
 # UnicodeDrawings
 
-A small Julia tool for drawing box diagrams like the ones in the PowerDynamics and
-NetworkDynamics docstrings. You write a scene of boxes, wires and labels in a few lines of Julia,
-and `udraw` places the characters, merges crossing strokes into the right junctions and lints
-the result.
-
-```julia
-c = Canvas()
-tf = tf!(c, 5, 3, "K", "1 + s T")
-hline!(c, tf.left - 4, tf.left, tf.cy)
-hline!(c, tf.right, tf.right + 5, tf.cy)
-text!(c, tf.left - 2, tf.top + 1, "in"; align=:right)
-text!(c, tf.right + 2, tf.top + 1, "out")
-c
-```
-```
-$ udraw render pt1.jl
-    ╭─────────╮
- in │    K    │ out
-╶───┤╶───────╴├────╴
-    │ 1 + s T │
-    ╰─────────╯
-lint: 0 errors, 0 warnings, 20×5
-```
-
-It is mainly meant to be driven by Claude, which gets the characters right but tends to slip a
-column. The tool does the column arithmetic, and a skill tells Claude how to use it. It works
-just as well by hand.
+A small Julia tool for drawing box diagrams out of Unicode box-drawing characters, like the
+ones in the PowerDynamics and NetworkDynamics docstrings. It is mainly meant to be used by
+Claude, which gets the characters right but tends to put them a column off. It works just as
+well by hand.
 
 ## Installation
 
-### Install `udraw` as an app
-
-You need Julia 1.12 or newer, nothing else. In the Pkg REPL (press `]` in Julia):
+With Julia 1.12 or newer, in the Pkg REPL (press `]`):
 
 ```
 pkg> app dev https://github.com/hexaeder/UnicodeDrawings.jl
 ```
 
-This clones the repository into `~/.julia/dev/UnicodeDrawings` and puts the `udraw` launcher in
-`~/.julia/bin`. Since it is a dev install, the launcher runs the code in that clone, so a
-`git pull` there is all an update takes. The Claude skill refers to that directory for the
-example scenes.
+This clones the repository to `~/.julia/dev/UnicodeDrawings` and installs the `udraw` command
+into `~/.julia/bin`, which has to be on your `PATH`. `udraw install-skill` then makes the tool
+available to Claude Code.
 
-Make sure `~/.julia/bin` is on your `PATH` so you can call `udraw` from the terminal.
+## How it works
 
-The launcher remembers the Julia binary it was installed with. After removing that Julia
-version, run `app dev` again.
+You describe the picture as a short Julia script, a *scene*: boxes, wires, arrows and labels at
+integer column and row positions. `udraw render` turns the scene into text:
 
-Without installing, `bin/udraw` in the repository does the same thing.
-
-### Install the Claude skill
-
-```sh
-udraw install-skill
+```julia
+c = Canvas()
+g = tf!(c, 12, 3, "K", "1 + s T")
+wire!(c, (1, 3), (g.left, 3))
+wire!(c, (g.right, 3), (g.right + 8, 3))
+wire!(c, (g.right + 4, 3), (g.right + 4, 7), (7, 7), (7, 4); cap=(:full, :full))
+mark!(c, 6, 3, "(Σ)")
+arrow!(c, 7, 4, :up)
+arrow!(c, 10, 3, :right)
+mark!(c, g.right + 4, 3, "●")
+text!(c, 1, 2, "u")
+text!(c, g.right + 8, 2, "y"; align=:right)
+text!(c, 8, 5, "−")
+c
+```
+```
+           ╭─────────╮
+u          │    K    │       y
+╶────(Σ)─→─┤╶───────╴├───●───╴
+      ↑    │ 1 + s T │   │
+      │−   ╰─────────╯   │
+      │                  │
+      ╰──────────────────╯
 ```
 
-This symlinks `skill/` to `~/.claude/skills/udraw`, so Claude Code picks up `skill/SKILL.md` in
-new sessions and uses it whenever a diagram has to be drawn or changed. Since it is a link, the
-skill follows the repository as well.
+Positions can be computed from other elements (`g.right + 4`), so nothing has to be counted.
+Where strokes meet, the tool picks the right junction: the wire ending on the box edge turns
+`│` into `┤`, and the corners of the feedback path come out rounded. If two things land on the
+same cell, rendering stops with an error instead of producing a mess. Every result is also
+checked for strokes that don't line up with their neighbours.
+
+The primitives:
+
+| call | draws |
+|---|---|
+| `box!(c, x, y, w, h; label)` | a box, or one sized around its label when `w, h` are left out |
+| `tf!(c, x, y, num, den)` | a transfer-function block, `num` over `den` |
+| `wire!(c, (x1, y1), (x2, y2), ...)` | a wire along horizontal and vertical segments |
+| `hline!(c, x1, x2, y)`, `vline!(c, x, y1, y2)` | a straight wire |
+| `text!(c, x, y, str)` | a label |
+| `mark!(c, x, y, str)` | a symbol on a wire, like `●` or `(+)` |
+| `arrow!(c, x, y, dir)` | an arrowhead on a wire |
+| `stroke!(c, x, y, '┤')` | a single box character, for details like axis ticks |
+
+Boxes and wires come in `:light`, `:round`, `:heavy` and `:double` line styles, and dashed.
+`skill/SKILL.md` has the full description, with all options and the conventions of the
+existing diagrams.
 
 ## Usage
 
 ```
 udraw render <input> [--ruler] [--locate <pattern>] [--png] [-o <out>]
 udraw import <input> [-o <scene.jl>]
-udraw install-skill
 ```
 
-The input is a scene or a finished diagram, as a file or `-` for stdin. In a file with
-```` ``` ```` fenced blocks, such as a Julia source file or markdown, `file:LINE` picks the block
-around that line. Output goes to stdout, or to a file with `-o`.
+- `udraw render scene.jl` prints the diagram, and any problems it found on stderr.
+- `--ruler` adds column and row numbers, to see where things landed.
+- `--png -o out.png` renders an image instead. It uses the bundled JuliaMono font, so it looks
+  the same on every machine.
+- `udraw import` goes the other way: it turns a finished diagram into a scene that reproduces
+  it, so an existing diagram can be changed by editing the scene.
 
-### Drawing a new diagram
-
-A scene is a Julia file that starts with `c = Canvas()`, calls the drawing primitives and ends
-with `c`. The primitives are `box!`, `tf!` (a transfer-function block), `wire!`, `hline!`,
-`vline!`, `text!`, `mark!`, `arrow!` and `stroke!`. `skill/SKILL.md` describes them, with the
-coordinate conventions and the styles found in the existing diagrams.
-
-`udraw render scene.jl` prints the diagram to stdout and the lint report to stderr. If two
-things land on the same cell, rendering stops with the scene line that caused it and the
-diagram drawn so far.
-
-To find out where things landed, `--ruler` adds column and row numbers, and `--locate` prints
-the exact `x y` of each match of a pattern instead of the diagram:
-
-```
-$ udraw render pt1.jl --ruler
-           1         2
-  12345678901234567890
-1     ╭─────────╮
-2  in │    K    │ out
-3 ╶───┤╶───────╴├────╴
-4     │ 1 + s T │
-5     ╰─────────╯
-$ udraw render pt1.jl --locate '┤'
-5 3
-```
-
-`--png -o out.png` renders the diagram as an image, which helps with spacing and balance. The
-font is the bundled JuliaMono and system fonts are ignored, so the result looks the same
-everywhere.
-
-### Checking a diagram
-
-Given a finished diagram instead of a scene, `render` prints it back with the lint report:
-
-```sh
-udraw render src/Library/building_blocks.jl:52
-```
-
-Lint checks the arms of every box character against its neighbours, which is what a
-one-column slip breaks. Issues are reported at their line in the file. Errors are misaligned
-strokes and set the exit status to 1. Warnings are loose ends and the like, which finished
-diagrams often have on purpose.
-
-### Editing a diagram in a docstring
-
-Diagrams live in docstrings and markdown files, so there is no scene to keep around. Instead,
-`import` rebuilds a scene from the fenced block at a given line:
-
-```sh
-udraw import src/Library/building_blocks.jl:52 -o scene.jl
-$EDITOR scene.jl
-udraw render scene.jl        # then paste the result over the old block
-```
-
-The imported scene reproduces the block exactly. Boxes, transfer-function blocks, wires and
-labels come back as primitives, and anything not recognised becomes per-cell fix-ups at the end
-of the scene.
+The input can also be a finished diagram, a file or `-` for stdin. For a Julia source or
+markdown file, `file:LINE` picks the diagram block around that line.
 
 ## Repository
 
-- `src/`: the package. `glyphs.jl` and `canvas.jl` model the grid, `draw.jl` has the
-  primitives, `lint.jl` the checks, `import.jl` the diagram-to-scene import, `png.jl` the image
-  output and `cli.jl` the command line.
-- `assets/`: JuliaMono Regular with its license (SIL Open Font License 1.1).
-- `skill/SKILL.md`: the guide for Claude, and the most complete description of the primitives.
-- `examples/`: 97 diagrams collected from PowerDynamics, NetworkDynamics and
-  PowerDynamicsLibrary. Each file starts with `# source: path:lines`. `tools/extract.py` found
-  them, and false positives such as file trees and REPL output were removed by hand.
-- `scenes/`: scenes that reproduce 15 of the examples exactly, including the large REEC_C,
-  REGC_C and WTGWGO_A diagrams. They are the test suite.
-- `designs/`: new diagrams drawn with the tool, the IEEE AC1C exciter and the DEGOV1 governor.
-
-Tests run on the `test` environment, a workspace that sees the package:
-
-```sh
-julia --project=test test/runtests.jl
-```
-
-A CLI call takes about 0.6 s, mostly Julia's own startup. A precompile workload at the end of
-the module keeps the rest low.
-
-## How it works
-
-For a language model the hard part of these diagrams is not the characters but the columns.
-Text arrives as a stream of tokens, so whether a `│` sits under a `┬` has to be counted, not
-seen. The tool makes that arithmetic explicit and checks it.
-
-- **Scenes with integer coordinates.** Every primitive is placed at an explicit column and row,
-  usually relative to a box (`tf.right + 2`). There is no auto-routing. Claude picks every
-  coordinate, but can compute it instead of counting.
-- **Merging strokes.** Each box character is stored as four arms (N E S W) with a weight. Strokes
-  on the same cell add their arms, and a lookup picks the character, so `─` over `│` becomes
-  `┼` and a wire ending on a box side becomes `┤`.
-- **Collisions are errors.** Text never overwrites anything and a stroke never overwrites text,
-  so a misplaced label fails loudly instead of producing a mess.
-- **A linter instead of eyes.** A box character with an arm pointing at a neighbour that has no
-  arm back is misaligned. This catches most slips without a screenshot.
-- **The examples are the spec.** The primitive set is what it takes to reproduce the collected
-  diagrams exactly, and `scenes/` keeps it that way.
-
-Rough families among the collected diagrams:
-
-- transfer-function blocks (`╭─┤╶──╴├─╮` with in/out stubs): building_blocks, basic_blocks
-- nested composition boxes (`MTKBus`, `MTKLine`, compiled `VertexModel` with `╔═╗` shell)
-- signal-flow and feedback loops (`(+)`, `▷ ◁ △ ▽` arrowheads on box edges, `╭╮╰╯` corners)
-- one-line grid sketches (`╺┯━┷╸` busbars, `(~)` generators)
-- annotations (`╶─┬─╴` underbraces pointing at code, `⎫⎬⎭` braces)
-- small plots (hysteresis, saturation)
+- `src/`: the package. `canvas.jl` and `glyphs.jl` hold the grid, `draw.jl` the primitives,
+  `lint.jl` the checks, `import.jl` the import, `png.jl` the image output and `cli.jl` the
+  command line.
+- `skill/SKILL.md`: the guide for Claude.
+- `examples/`: 99 diagrams collected from PowerDynamics, NetworkDynamics and
+  PowerDynamicsLibrary, each with its source location. `examples/scenes/` has scenes that
+  reproduce 17 of them exactly. Together they are the test suite.
+- `assets/`: the JuliaMono font with its license (SIL Open Font License 1.1).

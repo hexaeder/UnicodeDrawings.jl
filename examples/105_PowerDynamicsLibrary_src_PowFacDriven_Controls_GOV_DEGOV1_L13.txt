@@ -1,3 +1,5 @@
+# source: PowerDynamicsLibrary/src/PowFacDriven/Controls/GOV/DEGOV1.jl:14-29
+```asciiart
                                                                           __ Tmax
                                                                          /
          ╭─────╮   ╭─────────────────────╮   ╭──────────────────────╮   ╭───╮
@@ -14,3 +16,4 @@ P_setp ╶→┤+  − │   │ 1 + s T1 + s² T1 T2 │   │ (1 + s T5)(1 + s
                                                  │  1├←──┤╶────────╴├←────╴ P_gen
                                                  └───┘   │ 1 + s Te │
                                           DroopControl   ╰──────────╯
+```

@@ -20,7 +20,7 @@ function normtext(s)
 end
 
 runscene = UnicodeDrawings.runscene
-SCENEDIR = joinpath(@__DIR__, "..", "scenes")
+SCENEDIR = joinpath(@__DIR__, "..", "examples", "scenes")
 function checkscene(num; show=true)
     # scenes that start drawing further down render leading empty rows, which blocks don't have
     got = replace(render(runscene(joinpath(SCENEDIR, "$num.jl"))), r"\A\n+" => "")

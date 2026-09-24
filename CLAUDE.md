@@ -5,7 +5,7 @@ NetworkDynamics docstrings. Claude writes a list of primitives, the tool renders
 PNG via `udraw png`). The column arithmetic is the part a language model gets wrong, so
 the tool does it.
 
-`README.md` has the idea in more detail and `examples/` holds the collected diagrams.
+`README.md` is the overview for users, and `examples/` holds the collected diagrams.
 
 ## Layout
 
@@ -19,7 +19,7 @@ the tool does it.
   Guesses are checked by drawing them; leftovers become fix-ups.
 - `src/cli.jl`: `main` with `render` and `import`, run by `bin/udraw` or the installed `udraw` app through
   `julia -m UnicodeDrawings`.
-- `scenes/NNN.jl` reproduce `examples/NNN_*`.
+- `examples/scenes/NNN.jl` reproduce `examples/NNN_*`.
 - `skill/SKILL.md` is the guide for Claude. `udraw install-skill` symlinks the directory into
   `~/.claude/skills`, so the installed skill is this file.
 

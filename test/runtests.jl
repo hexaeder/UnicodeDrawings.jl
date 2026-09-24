@@ -3,7 +3,7 @@ using UnicodeDrawings: errors
 
 include("helpers.jl")
 
-# Examples reproduced by a scene in `scenes/`.
+# Examples reproduced by a scene in `examples/scenes/`.
 SCENES = sort([splitext(f)[1] for f in readdir(SCENEDIR) if endswith(f, ".jl")])
 
 # Lint errors the finished diagrams have on purpose (or that are small slips in the docs).

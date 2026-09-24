@@ -9,7 +9,7 @@ You write a scene, a short Julia file with primitives in it. The tool puts the c
 grid, merges crossing strokes into the right junctions and checks the result.
 
 `udraw` is a Pkg app that runs from `~/.julia/dev/UnicodeDrawings`. Paths below, like
-`scenes/011.jl`, are relative to that directory.
+`examples/scenes/011.jl`, are relative to that directory.
 
 ## Workflow
 
@@ -99,7 +99,7 @@ of a silent mess. Text can't see strokes drawn after it, though, so check a cent
 against its neighbours' edges yourself.
 
 To reuse part of a diagram, write a function `part!(c, x, y)` that draws it relative to
-`(x, y)` and returns its outer box (see `scenes/008.jl`).
+`(x, y)` and returns its outer box (see `examples/scenes/008.jl`).
 
 ## Lint
 
@@ -126,12 +126,13 @@ ends, axis ticks), so read them but don't chase every one.
   the sides and a `+`/`-` next to each arrow, or a small box labelled `Σ` with the signs
   written inside next to each input (better for three or more inputs).
 - Limits of a block go above and below its right corner (`V_Amax` / `V_Amin`), or use the
-  `__ max` / `min __/` notation of `scenes/013.jl`.
+  `__ max` / `min __/` notation of `examples/scenes/013.jl`.
 - Leave a column of space between a label and a wire, or end the wire with a half-stroke.
 
 ## Example
 
-`scenes/` holds the scenes for the examples the tool reproduces exactly. Start with `011.jl`:
+`examples/scenes/` holds the scenes for the examples the tool reproduces exactly, with `104.jl`
+and `105.jl` as full controller diagrams. Start with `011.jl`:
 
 ```julia
 c = Canvas()
