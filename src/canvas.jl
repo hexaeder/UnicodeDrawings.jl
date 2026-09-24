@@ -46,7 +46,7 @@ wins, and a non-solid style wins over solid. Drawing a stroke over text is an er
 """
 function addarms!(c::Canvas, x, y, arms::Arms; style=SOLID)
     old = c[x, y]
-    istext(old) && error("stroke at ($x, $y) would overwrite text $(repr(old.text))")
+    istext(old) && error("stroke at ($x, $y) would overwrite $(textname(c, x, y))")
     c.cells[(x, y)] = Cell(merge_arms(old.arms, arms), max(old.style, style), "")
     c
 end
@@ -67,7 +67,7 @@ function puttext!(c::Canvas, x, y, str::AbstractString; over=false, run=0)
         for (i, cell) in enumerate((Cell(Arms(), SOLID, String(g), run), ntuple(_ -> CONT, w - 1)...))
             old = c[x + i - 1, y]
             if !isblank(old) && !over
-                what = istext(old) ? "text $(repr(old.text))" : "a stroke"
+                what = istext(old) ? textname(c, x + i - 1, y) : "a stroke"
                 error("text $(repr(str)) at ($x, $y) would overwrite $what")
             end
             c.cells[(x + i - 1, y)] = cell
@@ -75,6 +75,26 @@ function puttext!(c::Canvas, x, y, str::AbstractString; over=false, run=0)
         x += max(w, 1)
     end
     c
+end
+
+# The text cell at (x, y) for a message, with the label it belongs to: the rest of its `text!`
+# call, or the word around it.
+function textname(c::Canvas, x, y)
+    run = c[x, y].run
+    xs = if run > 0
+        [i for ((i, j), cell) in c.cells if j == y && cell.run == run]
+    else
+        l, r = x, x
+        while istext(c[l - 1, y])
+            l -= 1
+        end
+        while istext(c[r + 1, y])
+            r += 1
+        end
+        [l, r]
+    end
+    label = join(cellchar(c[i, y]) for i in minimum(xs):maximum(xs) if c[i, y] != CONT)
+    label == c[x, y].text ? "text $(repr(label))" : "text $(repr(c[x, y].text)) of $(repr(label))"
 end
 
 """

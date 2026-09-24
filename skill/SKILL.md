@@ -8,8 +8,8 @@ description: Draw, edit and lint diagrams made of Unicode box-drawing characters
 You write a scene, a short Julia file with primitives in it. The tool puts the characters on the
 grid, merges crossing strokes into the right junctions and checks the result.
 
-`udraw` is a Pkg app that runs from `~/.julia/dev/UnicodeDrawings`. Paths below, like
-`examples/scenes/011.jl`, are relative to that directory.
+Paths below, like `examples/scenes/011.jl`, are relative to the package directory, which the
+first line of `udraw help` names.
 
 ## Workflow
 
@@ -68,8 +68,8 @@ Diagrams live in docstrings and markdown; there is no scene file to keep. To cha
    indented like the fence. Afterwards `udraw render src/Model.jl:LINE` checks the block in
    place. The scene can be thrown away.
 
-The lint line ends with the size, like `96×15`, so a width limit is easy to check. `pad=0` on
-a box saves two columns.
+The lint line ends with the size, like `96×15`, and `--width 92` turns a wider diagram into an
+error. `pad=0` on a box saves two columns.
 
 For a one-character fix, editing the text directly and checking it with `udraw render` is
 quicker.

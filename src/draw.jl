@@ -50,12 +50,14 @@ is sized around the label: the widest line plus `2 + 2pad` wide and the number o
 tall. Widths are display widths, so `T₁` or `ẋ` take one column per character.
 
 The label may have several lines. `align` (`:left`, `:center`, `:right`) and `valign` (`:top`,
-`:middle`, `:bottom`) place it inside, `pad` columns from the side wall. `line` and `dash` work
+`:middle`, `:bottom`) place it inside: `pad` columns from the side wall, and right under the top
+wall or right over the bottom one. `line` and `dash` work
 as for [`wire!`](@ref).
 
 Edges join with strokes already on the canvas, like a wire does. With `clear=true` the box
-first empties its rectangle, then joins its edges to every stroke that points at it from
-outside. That drops a box onto an existing wire, which is how to insert a block into a chain.
+first empties its rectangle, then joins its edges to every stroke or arrowhead that points at
+it from outside. That drops a box onto an existing wire, which is how to insert a block into a
+chain.
 """
 function box!(c::Canvas, x, y, w=nothing, h=nothing; label="", line=:light, dash=nothing,
               align=:center, valign=:middle, pad=1, over=false, clear=false)
@@ -89,25 +91,44 @@ function box!(c::Canvas, x, y, w=nothing, h=nothing; label="", line=:light, dash
         for ((xx, yy), d) in edge
             dx, dy = OFFSETS[d]
             nb = c[xx + dx, yy + dy]
-            if isstroke(nb) && nb.arms[opposite(d)] != NONE
-                addarms!(c, xx, yy, setarm(Arms(), d, nb.arms[opposite(d)]); style)
+            wt = nb.arms[opposite(d)]
+            # an arrowhead pointing at the box joins like the wire it sits on
+            if get(ARROW_DIRS, nb.text, 0) == opposite(d)
+                wt = c[xx + 2dx, yy + 2dy].arms[opposite(d)]
+                wt == NONE && (wt = LIGHT)
             end
+            wt != NONE && addarms!(c, xx, yy, setarm(Arms(), d, wt); style)
         end
     end
     b
 end
 
 """
-    tf!(c, x, y, num, den; line=:round, pad=1) -> Box
+    tf!(c, x, y, num, den; line=:round, pad=1, prefix="") -> Box
 
 A transfer-function block: `num` over `den` with a fraction bar on row `y`, so the block sits on
 a signal wire drawn along `y`. `x` is the left edge, and the block spans rows `y-2` to `y+2`.
+
+With a `prefix` like `"Kp +"` the block reads `Kp + Ki/s`: the prefix sits on the bar's row, in
+front of a fraction one column wider than `num` and `den` on either side.
 """
-function tf!(c::Canvas, x, y, num, den; line=:round, pad=1)
-    inner = max(textwidth(num), textwidth(den)) + 2pad
-    inner < 2 && (inner += 2)                 # room for the bar, `╶╴` at least
-    b = box!(c, x, y - 2, inner + 2, 5; label="$num\n\n$den", line, pad)
-    hline!(c, b.left + 1, b.right - 1, y)
+function tf!(c::Canvas, x, y, num, den; line=:round, pad=1, prefix="")
+    tw = max(textwidth(num), textwidth(den))
+    if isempty(prefix)
+        inner = tw + 2pad
+        inner < 2 && (inner += 2)             # room for the bar, `╶╴` at least
+        b = box!(c, x, y - 2, inner + 2, 5; label="$num\n\n$den", line, pad)
+        hline!(c, b.left + 1, b.right - 1, y)
+        return b
+    end
+    pw = textwidth(prefix)
+    b = box!(c, x, y - 2, pw + tw + 5 + 2pad, 5; line)
+    puttext!(c, b.left + 1 + pad, y, prefix)
+    bar = b.left + 2 + pad + pw               # first cell of the bar, which is tw + 2 long
+    hline!(c, bar, bar + tw + 1, y)
+    for (row, t) in ((y - 1, num), (y + 1, den))
+        puttext!(c, bar + 1 + (tw - textwidth(t)) ÷ 2, row, t)
+    end
     b
 end
 
@@ -119,8 +140,9 @@ arm pointing along the wire, so a wire ending in open space shows as a half-stro
 wire ending on a box edge turns it into a junction like `┤`. With `cap=:full` the ends are full
 strokes instead; `cap` can also be a tuple to set the two ends separately.
 
-`line` is `:light`, `:round` (light with rounded corners), `:heavy` or `:double`, and
-`dash=2`, `3` or `4` makes it dashed.
+`line` is `:light`, `:round` (light with rounded corners), `:heavy` or `:double`. `dash=2`, `3`
+or `4` draws the straight cells with that many dashes each (`╌`, `┄`, `┈`); corners and ends
+stay solid, so a short dashed wire hardly looks dashed.
 
 With `over=true` the wire replaces what is underneath instead of joining it. A wire drawn
 across a box edge that way leaves a gap in the edge rather than a crossing.
@@ -198,9 +220,10 @@ function text!(c::Canvas, x, y, str::AbstractString; align=:left, over=false)
 end
 
 """
-    mark!(c, x, y, str)
+    mark!(c, x, y, str; align=:left)
 
-Text placed on top of whatever is there, such as `●` on a wire or `(+)` at a junction.
+Text placed on top of whatever is there, such as `●` on a wire or `(+)` at a junction. `align`
+works as for [`text!`](@ref).
 """
 mark!(c::Canvas, x, y, str::AbstractString; kw...) = text!(c, x, y, str; over=true, kw...)
 
@@ -212,6 +235,7 @@ const ARROWHEADS = Dict(
     :smallsolid => ('▴', '▸', '▾', '◂'),
 )
 const DIRSYMS = Dict(:up => N, :right => E, :down => S, :left => W)
+const ARROW_DIRS = Dict(string(ch) => d for heads in values(ARROWHEADS) for (d, ch) in enumerate(heads))
 
 """
     arrow!(c, x, y, dir; head=:arrow)

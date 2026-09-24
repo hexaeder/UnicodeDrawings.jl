@@ -1,5 +1,5 @@
 const USAGE = """
-usage: udraw render <input> [--ruler] [--locate <pattern>] [--png] [-o <out>]
+usage: udraw render <input> [--ruler] [--locate <pattern>] [--png] [--width <n>] [-o <out>]
        udraw import <input> [-o <scene.jl>]
        udraw help [<name>]
        udraw install-skill
@@ -10,7 +10,8 @@ or `-` for stdin. In a file with ``` fenced blocks, such as a docstring or markd
 
 `render` prints the diagram and reports lint issues on stderr; the exit status is 1 if lint
 finds errors. `--ruler` adds column and row numbers, `--locate` prints the `x y` of each match
-instead of the diagram, and `--png` renders an image, which needs `-o`.
+instead of the diagram, and `--png` renders an image to `-o` instead of printing the diagram.
+`--width` makes a diagram wider than `<n>` columns an error.
 
 `import` turns a diagram into a scene that reproduces it, to be edited and rendered again.
 `help` prints the reference for writing scenes, taken from the docstrings, or the entry
@@ -80,7 +81,7 @@ end
 
 # Lint issues on stderr, at file positions for a block of a larger file.
 # `diagram` is the scene's canvas, which knows more than its text (which labels are separate).
-function report(str, diagram, input)
+function report(str, diagram, input, maxwidth=nothing)
     buf = IOBuffer()
     issues = lintreport(buf, diagram)
     out = String(take!(buf))
@@ -92,10 +93,16 @@ function report(str, diagram, input)
     end
     print(stderr, out)
     nerr = count(i -> i.level == :error, issues)
+    nwarn = length(issues) - nerr
     lines = split(str, '\n')
-    size = "$(maximum(textwidth, lines; init=0))×$(length(lines))"
+    width = maximum(textwidth, lines; init=0)
+    if !isnothing(maxwidth) && width > maxwidth
+        println(stderr, "error: $width columns, wider than --width $maxwidth")
+        nerr += 1
+    end
+    size = "$(width)×$(length(lines))"
     label = input.dy > 0 ? "$(input.name):$(input.dy)" : "lint"
-    println(stderr, "$label: $nerr errors, $(length(issues) - nerr) warnings, $size")
+    println(stderr, "$label: $nerr errors, $nwarn warnings, $size")
     nerr == 0 ? 0 : 1
 end
 
@@ -121,7 +128,8 @@ function render_cmd(input, opts)
     else
         isnothing(out) ? print(shown) : write(out, shown)
     end
-    report(str, diagram, input)
+    maxwidth = haskey(opts, "--width") ? parse(Int, opts["--width"]) : nothing
+    report(str, diagram, input, maxwidth)
 end
 
 function import_cmd(input, opts)
@@ -145,7 +153,7 @@ function parseargs(args)
     i = 1
     while i <= length(args)
         a = args[i]
-        if a in ("-o", "--locate")
+        if a in ("-o", "--locate", "--width")
             i < length(args) || return nothing
             opts[a] = args[i+1]
             i += 2
@@ -188,6 +196,7 @@ function apidocs(io::IO, name=nothing)
         return 0
     end
     sort!(entries; by=e -> e.pos)
+    println(io, "UnicodeDrawings is in $(Base.contractuser(pkgdir(m))), with example scenes in examples/scenes/.\n")
     println(io, "# Drawing\n\nA scene is Julia code: `c = Canvas()`, then the calls below, and `c` as the last value.\n")
     for (i, e) in enumerate(entries)
         i > 1 && e.drawing != entries[i-1].drawing &&
@@ -214,11 +223,6 @@ function install_skill(dir=joinpath(homedir(), ".claude", "skills"))
     islink(dst) && rm(dst)
     symlink(src, dst)
     println("$dst -> $src")
-    # The guide names the package directory, so a moved package sends Claude to a dead path.
-    root = Base.contractuser(pkgdir(@__MODULE__))
-    if !occursin(root, read(joinpath(src, "SKILL.md"), String))
-        println(stderr, "warning: SKILL.md does not mention $root, paths in it may be stale")
-    end
     return 0
 end
 

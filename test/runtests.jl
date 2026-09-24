@@ -151,6 +151,40 @@ KNOWN_ERRORS = Dict(
         @test occursin("text!(c, b.cx, b.top - 1, \"max\"; align=:center)", scene)
     end
 
+    @testset "sums, cleared boxes, collisions" begin
+        # a wire leaving a sum mark is not running into a word
+        @test isempty(lint("╶→(Σ)╴\n   │\n   ╵"))
+        @test !isempty(lint("╶→(Sa╴\n   │\n   ╵"))
+        # a box dropped behind an arrowhead joins through it
+        c = Canvas()
+        hline!(c, 1, 12, 2; arrow=-5)
+        box!(c, 9, 1; label="Kg", pad=0, clear=true)
+        @test split(render(c), '\n')[2] == "╶──────→┤Kg│"
+        # a collision names the whole label it hits
+        c = Canvas()
+        text!(c, 1, 1, "__ Qmax")
+        @test_throws r"text \"a\" of \"__ Qmax\"" vline!(c, 6, 1, 3)
+    end
+
+    @testset "tf! with a prefix" begin
+        c = Canvas()
+        tf!(c, 1, 3, "Ki", "s"; prefix="Kp +")
+        s = render(c)
+        @test s == "╭───────────╮\n│       Ki  │\n│ Kp + ╶──╴ │\n│       s   │\n╰───────────╯"
+        scene = UnicodeDrawings.import_scene(s)
+        @test occursin("tf!(c, 1, 3, \"Ki\", \"s\"; prefix=\"Kp +\")", scene)
+    end
+
+    @testset "render --width" begin
+        mktempdir() do dir
+            f = joinpath(dir, "d.txt")
+            write(f, example("011"))
+            run1(w) = redirect_stderr(() -> UnicodeDrawings.main(["render", f, "--width", w, "-o", joinpath(dir, "o")]), devnull)
+            @test run1("20") == 0
+            @test run1("19") == 1
+        end
+    end
+
     @testset "help from docstrings" begin
         all = sprint(UnicodeDrawings.apidocs)
         # drawing first, each shared docstring once

@@ -5,8 +5,11 @@ struct Issue
     msg::String
 end
 
-# A stroke may end on a symbol (arrowhead, `●`, `(+)`) or on `o`, but not on a word.
-endsonword(cell::Cell) = any(ch -> ch != 'o' && (isletter(ch) || isdigit(ch)), cell.text)
+# A stroke may end on a symbol (arrowhead, `●`, `(+)`, `(Σ)`) or on `o`, but not on a word.
+function endsonword(c::Canvas, x, y)
+    c[x - 1, y].text == "(" && c[x + 1, y].text == ")" && return false
+    any(ch -> ch != 'o' && (isletter(ch) || isdigit(ch)), c[x, y].text)
+end
 
 # A straight line through the cell along the other axis than direction `d`.
 function crosses(cell::Cell, d)
@@ -72,7 +75,7 @@ function lint(c::Canvas)
             elseif isblank(nb)
                 beyond.arms[opposite(d)] != NONE && continue
                 push!(issues, Issue(x, y, :warning, "$where points at empty space"))
-            elseif endsonword(nb)
+            elseif endsonword(c, x + dx, y + dy)
                 push!(issues, Issue(x, y, :warning, "$where runs into text '$(nb.text)'"))
             end
         end

@@ -186,15 +186,17 @@ function import_scene(str::AbstractString; check=true)
         call, tc, name = nothing, nothing, ""
         for label in label_candidates(O, b, owned)
             ls = split(label, '\n')
-            # a transfer-function block: numerator, fraction bar, denominator
-            if length(ls) == 3 && isempty(ls[2]) && b.h == 5 && isnothing(dash)
+            # a transfer-function block: numerator, fraction bar (maybe after a prefix), denominator
+            if length(ls) == 3 && b.h == 5 && isnothing(dash)
+                prefix = String(ls[2])
                 for pad in (1, 0, 2, 3)
-                    t = trial(O, owned, c -> tf!(c, b.x, b.y + 2, ls[1], ls[3]; line, pad))
+                    t = trial(O, owned, c -> tf!(c, b.x, b.y + 2, ls[1], ls[3]; line, pad, prefix))
                     (isnothing(t) || extent(t) != (b.right, b.bottom)) && continue
-                    all(x -> haskey(A, (x, b.y + 2)), b.left+1:b.right-1) || continue
+                    all(p -> haskey(A, p), (p for (p, cell) in t.cells if isstroke(cell))) || continue
                     tfopts = Pair{Symbol,Any}[]
                     line != :round && push!(tfopts, :line => line)
                     pad != 1 && push!(tfopts, :pad => pad)
+                    isempty(prefix) || push!(tfopts, :prefix => prefix)
                     call = "tf!(c, $(b.x), $(b.y + 2), $(repr(String(ls[1]))), $(repr(String(ls[3])))$(kwstring(tfopts)))"
                     tc, name = t, "tf"
                     break
