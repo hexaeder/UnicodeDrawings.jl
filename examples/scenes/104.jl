@@ -1,11 +1,5 @@
 # IEEE AC1C exciter (Fig. 9) with the AC rotating exciter (Fig. 8), without OEL/UEL inputs.
 
-# Wire from `x1` to `x2` on row `y`, arrowhead just before `x2`.
-function flow!(c, x1, x2, y)
-    wire!(c, (x1, y), (x2, y))
-    arrow!(c, x2 - 1, y, :right)
-end
-
 c = Canvas()
 y = 5                     # forward path
 s1, s2 = 8, 14            # summing points
@@ -23,14 +17,14 @@ vfe = box!(c, tap - 3 - (textwidth(vfelabel) + 3), y + 7; label=vfelabel, line=:
 rate = tf!(c, lead.left + 2, vfe.cy, "s K_F", "1 + s T_F")
 
 # forward path
-flow!(c, 1, s1 - 1, y)
-flow!(c, s1 + 1, s2 - 1, y)
-flow!(c, s2 + 1, lead.left, y)
-flow!(c, lead.right, reg.left, y)
-flow!(c, reg.right, lim.left, y)
-flow!(c, lim.right, s3 - 1, y)
-flow!(c, s3 + 1, exc.left, y)
-flow!(c, exc.right, mul - 1, y)
+hline!(c, 1, s1 - 1, y; arrow=-2)
+hline!(c, s1 + 1, s2 - 1, y; arrow=-2)
+hline!(c, s2 + 1, lead.left, y; arrow=-2)
+hline!(c, lead.right, reg.left, y; arrow=-2)
+hline!(c, reg.right, lim.left, y; arrow=-2)
+hline!(c, lim.right, s3 - 1, y; arrow=-2)
+hline!(c, s3 + 1, exc.left, y; arrow=-2)
+hline!(c, exc.right, mul - 1, y; arrow=-2)
 wire!(c, (mul + 1, y), (mul + 7, y))
 
 # inputs from above and below the summing points

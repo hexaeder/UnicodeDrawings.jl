@@ -114,6 +114,43 @@ KNOWN_ERRORS = Dict(
         end
     end
 
+    @testset "labels that touch" begin
+        c = Canvas()
+        text!(c, 1, 1, "uc"); text!(c, 3, 1, "Pmin")
+        text!(c, 9, 1, "ab"); mark!(c, 11, 1, "+")    # a mark next to a label is fine
+        @test [i.msg for i in lint(c)] == ["labels 'uc' and 'Pmin' touch"]
+        @test isempty(lint(render(c)))                # the text alone can't tell
+    end
+
+    @testset "wire arrows" begin
+        c = Canvas()
+        b = box!(c, 8, 1; label="G")
+        wire!(c, (1, 2), (b.left, 2); arrow=-2)
+        wire!(c, (b.right, 2), (b.right + 2, 2), (b.right + 2, 4); arrow=(1, -1), head=:triangle)
+        @test render(c) == "       ┌───┐\n╶─────→┤ G ▷─╮\n       └───┘ │\n             ▽"
+    end
+
+    @testset "insert into some rows" begin
+        c = parse_text("╶─┤A├─┤B├─╴\n\n╶─┤C├─┤D├─╴")
+        insertcols!(c, 6, 3; rows=3:3)
+        @test render(c) == "╶─┤A├─┤B├─╴\n\n╶─┤C├────┤D├─╴"
+    end
+
+    @testset "scenes" begin
+        # top-level loops update globals, as in the REPL
+        c = UnicodeDrawings.runscene("c = Canvas()\nx = 1\nfor k in 1:2\n    x = box!(c, x, 1).right + 2\nend\nc", "s")
+        @test render(c) == "┌──┐ ┌──┐\n└──┘ └──┘"
+        @test repr(box!(Canvas(), 3, 1, 11, 5)) == "Box(left=3, right=13, top=1, bottom=5, cx=8, cy=3)"
+    end
+
+    @testset "import splits arrows from marks" begin
+        scene = UnicodeDrawings.import_scene("╶──→(Σ)──╴\n     ↑\n     ╵")
+        @test occursin("arrow!(c, 4, 1, :right)", scene) && occursin("mark!(c, 5, 1, \"(Σ)\")", scene)
+        # a limit label centred over a box hangs off that box, not the next one
+        scene = UnicodeDrawings.import_scene(" max\n┌───┐ ┌───┐\n│   ├─┤   │\n└───┘ └───┘")
+        @test occursin("text!(c, b.cx, b.top - 1, \"max\"; align=:center)", scene)
+    end
+
     @testset "help from docstrings" begin
         all = sprint(UnicodeDrawings.apidocs)
         # drawing first, each shared docstring once

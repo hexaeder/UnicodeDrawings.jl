@@ -60,8 +60,9 @@ Diagrams live in docstrings and markdown; there is no scene file to keep. To cha
    insertcols!(c, lim.left, 6)    # 6 empty columns before `lim`; crossing wires stretch
    lv = box!(c, lim.left + 1, lim.top; label="LV", pad=0, clear=true)   # drops onto the wire: ┤LV├
    ```
-   `insertrows!` does the same for rows. After an insert, box variables still hold their old
-   position, so for anything right of the cut add the inserted width yourself.
+   `insertrows!` does the same for rows, and `rows=`/`cols=` limits either to part of the
+   drawing. After an insert, box variables still hold their old position, so for anything
+   right of the cut add the inserted width yourself.
    `box!(…; clear=true)` empties its rectangle and joins its edges to whatever points at it.
 3. `udraw render scene.jl -o new.txt`, then replace the lines between the fences with it,
    indented like the fence. Afterwards `udraw render src/Model.jl:LINE` checks the block in
@@ -81,8 +82,8 @@ without joining it (`←──│`). Lint can't tell that apart from a slip, so 
 the error. An arrowhead in the last cell (`──→│`) avoids it.
 
 A **warning** is a loose end (a full stroke pointing into empty space; a half-stroke `╶` is a
-proper end and isn't reported), a stroke running into a word, or a heavy arm meeting a light
-one. Finished diagrams have these on purpose (wire ends, axis ticks), so read them but don't
+proper end and isn't reported), a stroke running into a word, a heavy arm meeting a light
+one, or two labels that touch and read as one word. Finished diagrams have these on purpose (wire ends, axis ticks), so read them but don't
 chase every one.
 
 ## Style
@@ -92,7 +93,7 @@ the docs and docstrings for `┌` or `╭`) and follow their choices: box and li
 arrowheads, how sums and limits are drawn, and how wide they get.
 
 Without such a model, keep it plain. Arrowheads sit on the wire one cell before the box they
-point into, labels go above the wire, and a label keeps a column of space from any stroke.
+point into (`arrow=-2`), labels go above the wire, and a label keeps a column of space from any stroke.
 
 ## Example
 

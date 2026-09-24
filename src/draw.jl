@@ -38,6 +38,8 @@ function Base.getproperty(b::Box, s::Symbol)
     getfield(b, s)
 end
 Base.propertynames(::Box) = (:x, :y, :w, :h, :left, :right, :top, :bottom, :cx, :cy)
+Base.show(io::IO, b::Box) = print(io, "Box(left=$(b.left), right=$(b.right), top=$(b.top), ",
+                                   "bottom=$(b.bottom), cx=$(b.cx), cy=$(b.cy))")
 
 """
     box!(c, x, y, w=nothing, h=nothing; label="", line=:light, dash=nothing,
@@ -110,7 +112,7 @@ function tf!(c::Canvas, x, y, num, den; line=:round, pad=1)
 end
 
 """
-    wire!(c, points...; line=:round, dash=nothing, cap=:half, over=false)
+    wire!(c, points...; line=:round, dash=nothing, cap=:half, over=false, arrow=nothing, head=:arrow)
 
 An orthogonal path through `points`, each an `(x, y)` tuple. The first and last cell only get an
 arm pointing along the wire, so a wire ending in open space shows as a half-stroke `╶`, and a
@@ -122,11 +124,17 @@ strokes instead; `cap` can also be a tuple to set the two ends separately.
 
 With `over=true` the wire replaces what is underneath instead of joining it. A wire drawn
 across a box edge that way leaves a gap in the edge rather than a crossing.
+
+`arrow` puts arrowheads on the wire, pointing the way it runs. It counts cells along the wire:
+`1` is the first cell, `-1` the last and `-2` the one before, and a tuple like `(2, -2)` places
+several. `head` picks their shape, as for [`arrow!`](@ref).
 """
-function wire!(c::Canvas, points::Tuple{Int,Int}...; line=:round, dash=nothing, cap=:half, over=false)
+function wire!(c::Canvas, points::Tuple{Int,Int}...; line=:round, dash=nothing, cap=:half,
+               over=false, arrow=nothing, head=:arrow)
     weight, style = linestyle(line, dash)
     arms = Dict{Tuple{Int,Int},Arms}()
     dirs = Int[]
+    path = [(first(points), 0)]              # the cells in order, with the way the wire runs
     for (p, q) in zip(points, Base.tail(points))
         p == q && continue
         p[1] == q[1] || p[2] == q[2] || error("wire segment $p → $q is not horizontal or vertical")
@@ -138,6 +146,7 @@ function wire!(c::Canvas, points::Tuple{Int,Int}...; line=:round, dash=nothing, 
             nxt = (cur[1] + dx, cur[2] + dy)
             arms[cur] = setarm(get(arms, cur, Arms()), d, weight)
             arms[nxt] = setarm(get(arms, nxt, Arms()), opposite(d), weight)
+            push!(path, (nxt, d))
             cur = nxt
         end
     end
@@ -152,6 +161,11 @@ function wire!(c::Canvas, points::Tuple{Int,Int}...; line=:round, dash=nothing, 
         else
             addarms!(c, x, y, a; style)
         end
+    end
+    length(path) > 1 && (path[1] = (path[1][1], path[2][2]))
+    for i in something(arrow, ())
+        (x, y), d = path[i > 0 ? i : end + 1 + i]
+        mark!(c, x, y, string(ARROWHEADS[head][d]))
     end
     c
 end
@@ -173,11 +187,12 @@ Write `str` starting at column `x`. With `align=:center` its middle character si
 following rows. Writing onto a stroke is an error unless `over=true`.
 """
 function text!(c::Canvas, x, y, str::AbstractString; align=:left, over=false)
+    run = over ? 0 : (TEXT_RUNS[] += 1)
     for (i, line) in enumerate(split(str, '\n'))
         w = textwidth(line)
         x0 = align === :left ? x : align === :center ? x - (w - 1) ÷ 2 : align === :right ? x - w + 1 :
              error("unknown align $(repr(align))")
-        puttext!(c, x0, y + i - 1, line; over)
+        puttext!(c, x0, y + i - 1, line; over, run)
     end
     c
 end
@@ -228,17 +243,20 @@ Clear the cell.
 erase!(c::Canvas, x, y) = (delete!(c.cells, (x, y)); c)
 
 """
-    insertcols!(c, x, n)
-    insertrows!(c, y, n)
+    insertcols!(c, x, n; rows=nothing)
+    insertrows!(c, y, n; cols=nothing)
 
 Open a gap of `n` columns before column `x` (or `n` rows before row `y`). Everything from there
 on moves over, and strokes that cross the gap are stretched, so wires stay connected. Meant for
 inserting something into the middle of a finished drawing, such as an imported diagram.
-"""
-insertcols!(c::Canvas, x, n) = _insert!(c, x, n, E)
-@doc (@doc insertcols!) insertrows!(c::Canvas, y, n) = _insert!(c, y, n, S)
 
-function _insert!(c::Canvas, at, n, d)
+`rows` (or `cols`) limits the insert to part of the drawing, like one row of blocks. Wires that
+leave that part are cut, so check the lint afterwards.
+"""
+insertcols!(c::Canvas, x, n; rows=nothing) = _insert!(c, x, n, E, rows)
+@doc (@doc insertcols!) insertrows!(c::Canvas, y, n; cols=nothing) = _insert!(c, y, n, S, cols)
+
+function _insert!(c::Canvas, at, n, d, span)
     k = d == E ? 1 : 2                        # the coordinate that moves
     step(p, dir, s=1) = (p[1] + s * OFFSETS[dir][1], p[2] + s * OFFSETS[dir][2])
     # Text sitting on a line across the cut, like an arrowhead on a vertical wire, has to move
@@ -271,8 +289,10 @@ function _insert!(c::Canvas, at, n, d)
         i
     end
     posfn(o) = k == 1 ? (i -> (i, o)) : (i -> (o, i))
-    cuts = Dict(o => rowcut(posfn(o)) for o in unique(p[3-k] for p in keys(c.cells)))
-    moved = Dict((p[k] >= cuts[p[3-k]] ? (d == E ? (p[1] + n, p[2]) : (p[1], p[2] + n)) : p) => cell
+    cuts = Dict(o => rowcut(posfn(o)) for o in unique(p[3-k] for p in keys(c.cells))
+                if isnothing(span) || o in span)
+    moves(p) = haskey(cuts, p[3-k]) && p[k] >= cuts[p[3-k]]
+    moved = Dict((moves(p) ? (d == E ? (p[1] + n, p[2]) : (p[1], p[2] + n)) : p) => cell
                  for (p, cell) in c.cells)
     # The line that points across the gap from one side: a stroke's arm, or the stroke just
     # behind a one-cell mark like `●`.

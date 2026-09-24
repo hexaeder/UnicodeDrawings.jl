@@ -394,9 +394,16 @@ const ARROW_NAMES = Dict(ch => (head, dir) for (head, chars) in ARROWHEADS
                          for (dir, ch) in zip((:up, :right, :down, :left), chars))
 
 # Text outside labels, one call per phrase. A phrase sitting on a wire becomes a mark.
-# A position next to a box, as an expression relative to it: to the right, to the left (then
-# right-aligned) or just above or below.
+# A position next to a box, as an expression relative to it: just above or below (centred on
+# the box if the text is), else to the right or to the left (then right-aligned).
 function textanchor(x1, x2, y, named)
+    over(b) = min(x2, b.right) - max(x1, b.left) + 1
+    above = [(n, b) for (n, b) in named if y in (b.top - 1, b.bottom + 1) && over(b) > 0]
+    if !isempty(above)
+        n, b = argmax(nb -> over(nb[2]), above)
+        x1 + (x2 - x1) ÷ 2 == b.cx && return ("$n.cx, $(yrel(n, b, y))", "; align=:center")
+        return ("$(xrel(n, b, x1)), $(yrel(n, b, y))", "")
+    end
     best, dist = nothing, 5
     for (n, b) in named
         near = b.top - 1 <= y <= b.bottom + 1
@@ -404,12 +411,27 @@ function textanchor(x1, x2, y, named)
             best, dist = ("$(xrel(n, b, x1)), $(yrel(n, b, y))", ""), x1 - b.right
         elseif near && 0 < b.left - x2 < dist
             best, dist = ("$(xrel(n, b, x2)), $(yrel(n, b, y))", "; align=:right"), b.left - x2
-        elseif (y == b.top - 1 || y == b.bottom + 1) && b.left <= x1 && x2 <= b.right && dist > 1
-            best, dist = ("$(xrel(n, b, x1)), $(yrel(n, b, y))", ""), 1
         end
     end
     something(best, ("$x1, $y", ""))
 end
+
+# A mark with an arrowhead in it, like `→(Σ)`, as pieces with each arrowhead on its own, so the
+# scene says `arrow!` for it.
+function arrowsplit(O, y, x1, x2)
+    pieces = Tuple{Int,Int}[]
+    for x in x1:x2
+        if O[x, y] == CONT                    # the rest of a wide character
+            pieces[end] = (pieces[end][1], x)
+        elseif isempty(pieces) || isarrow(O, y, x) || isarrow(O, y, pieces[end][1])
+            push!(pieces, (x, x))
+        else
+            pieces[end] = (pieces[end][1], x)
+        end
+    end
+    pieces
+end
+isarrow(O, y, x) = (t = O[x, y].text; length(t) == 1 && haskey(ARROW_NAMES, only(t)))
 
 function text_code(O, A, consumed, named=Tuple{String,Box}[])
     code = String[]
@@ -445,7 +467,7 @@ function text_code(O, A, consumed, named=Tuple{String,Box}[])
                 push!(merged, t)
             end
         end
-        for (x1, x2, onwire) in merged
+        for (x1, x2, onwire) in merged, (x1, x2) in (onwire ? arrowsplit(O, y, x1, x2) : [(x1, x2)])
             s = rowtext(O, y, x1, x2)
             pos, align = textanchor(x1, x2, y, named)
             if onwire && length(s) == 1 && haskey(ARROW_NAMES, only(s))

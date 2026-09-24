@@ -1,12 +1,15 @@
 """
 A grid cell is either a stroke (a set of arms) or a piece of text. Text cells hold one grapheme;
-a wide grapheme is followed by a `CONT` cell so that columns stay aligned.
+a wide grapheme is followed by a `CONT` cell so that columns stay aligned. Text from one `text!`
+call shares a `run` number, so lint can tell two labels that touch from a single word.
 """
 struct Cell
     arms::Arms
     style::Style
     text::String
+    run::Int
 end
+Cell(arms, style, text) = Cell(arms, style, text, 0)
 const BLANK = Cell(Arms(), SOLID, "")
 const CONT = Cell(Arms(), SOLID, "\0")
 
@@ -25,6 +28,7 @@ struct Canvas
 end
 # The CLI shows the newest canvas when a scene fails halfway.
 const LAST_CANVAS = Ref{Any}(nothing)
+const TEXT_RUNS = Ref(0)
 Canvas() = LAST_CANVAS[] = Canvas(Dict{Tuple{Int,Int},Cell}())
 
 Base.getindex(c::Canvas, x::Integer, y::Integer) = get(c.cells, (x, y), BLANK)
@@ -48,19 +52,19 @@ function addarms!(c::Canvas, x, y, arms::Arms; style=SOLID)
 end
 
 """
-    puttext!(c, x, y, str; over=false)
+    puttext!(c, x, y, str; over=false, run=0)
 
 Write `str` starting at column `x`. Writing over anything already there is an error unless
 `over=true`, which is how arrowheads and junction dots are placed on a wire.
 """
-function puttext!(c::Canvas, x, y, str::AbstractString; over=false)
+function puttext!(c::Canvas, x, y, str::AbstractString; over=false, run=0)
     for g in Base.Unicode.graphemes(str)
         if g == " "   # spaces stay blank, as in `parse_text`
             x += 1
             continue
         end
         w = textwidth(g)
-        for (i, cell) in enumerate((Cell(Arms(), SOLID, String(g)), ntuple(_ -> CONT, w - 1)...))
+        for (i, cell) in enumerate((Cell(Arms(), SOLID, String(g), run), ntuple(_ -> CONT, w - 1)...))
             old = c[x + i - 1, y]
             if !isblank(old) && !over
                 what = istext(old) ? "text $(repr(old.text))" : "a stroke"

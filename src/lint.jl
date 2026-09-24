@@ -14,6 +14,26 @@ function crosses(cell::Cell, d)
     a[d] == NONE && a[opposite(d)] == NONE && a[mod1(d + 1, 4)] != NONE && a[mod1(d + 3, 4)] != NONE
 end
 
+# Two `text!` labels side by side read as one word, like `uc` and `Pmin` as `ucPmin`.
+function touching(c::Canvas, x, y)
+    run = c[x, y].run
+    x2 = x + 1
+    while c[x2, y] == CONT
+        x2 += 1
+    end
+    nb = c[x2, y]
+    (nb.run > 0 && nb.run != run) || return nothing
+    word(xs) = join(c[i, y].text for i in xs if c[i, y] != CONT)
+    x1, x3 = x, x2
+    while c[x1 - 1, y].run == run || (c[x1 - 1, y] == CONT && c[x1 - 2, y].run == run)
+        x1 -= 1
+    end
+    while c[x3 + 1, y].run == nb.run || c[x3 + 1, y] == CONT
+        x3 += 1
+    end
+    "labels '$(word(x1:x))' and '$(word(x2:x3))' touch"
+end
+
 """
     lint(c::Canvas) -> Vector{Issue}
 
@@ -30,6 +50,7 @@ function lint(c::Canvas)
     xmax, ymax = extent(c)
     for y in 1:ymax, x in 1:xmax
         cell = c[x, y]
+        cell.run > 0 && (t = touching(c, x, y)) !== nothing && push!(issues, Issue(x, y, :warning, t))
         isstroke(cell) || continue
         ch = cellchar(cell)
         ch == "?" && push!(issues, Issue(x, y, :error, "no character for arms $(cell.arms.a)"))
@@ -62,13 +83,14 @@ lint(str::AbstractString) = lint(parse_text(str))
 errors(issues) = filter(i -> i.level == :error, issues)
 
 """
-    lintreport([io,] str)
+    lintreport([io,] diagram)
 
-Lint a diagram and print each issue under its line with a caret. Returns the issues.
+Lint a diagram, given as text or as a `Canvas`, and print each issue under its line with a
+caret. Returns the issues.
 """
-function lintreport(io::IO, str::AbstractString)
-    lines = split(str, '\n')
-    issues = lint(str)
+function lintreport(io::IO, c::Canvas)
+    lines = split(render(c), '\n')
+    issues = lint(c)
     for is in issues
         println(io, "$(is.y):$(is.x): $(is.level): ", is.msg)
         println(io, "    ", lines[is.y])
@@ -76,7 +98,8 @@ function lintreport(io::IO, str::AbstractString)
     end
     issues
 end
-lintreport(str::AbstractString) = lintreport(stdout, str)
+lintreport(io::IO, str::AbstractString) = lintreport(io, parse_text(str))
+lintreport(d) = lintreport(stdout, d)
 
 """
     ruler([io,] str)

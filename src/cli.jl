@@ -20,10 +20,20 @@ for one `<name>` like `box!`. `install-skill` links `skill/` into ~/.claude/skil
 """
     runscene(path) -> Canvas
 
-Evaluate a scene file in a fresh module that has UnicodeDrawings loaded.
+Evaluate a scene file in a fresh module that has UnicodeDrawings loaded. Scenes run with the
+scoping of the REPL, so a loop at top level can update a variable like `x += 10`.
 """
-runscene(path) = scene_result(path, m -> Base.include(m, path))
-runscene(code, name) = scene_result(name, m -> Base.include_string(m, code, name))
+runscene(path) = scene_result(path, m -> Base.include(softscope, m, path))
+runscene(code, name) = scene_result(name, m -> Base.include_string(softscope, m, code, name))
+
+# The REPL's soft scope, as in `REPL.softscope`.
+function softscope(@nospecialize ex)
+    ex isa Expr || return ex
+    ex.head === :toplevel && return Expr(:toplevel, map(softscope, ex.args)...)
+    ex.head in (:meta, :import, :using, :export, :module, :error, :incomplete, :thunk) && return ex
+    ex.head === :global && all(x -> x isa Symbol, ex.args) && return ex
+    Expr(:block, Expr(:softscope, true), ex)
+end
 
 function scene_result(name, run)
     m = Module(:Scene)
@@ -69,9 +79,10 @@ function readinput(arg)
 end
 
 # Lint issues on stderr, at file positions for a block of a larger file.
-function report(str, input)
+# `diagram` is the scene's canvas, which knows more than its text (which labels are separate).
+function report(str, diagram, input)
     buf = IOBuffer()
-    issues = lintreport(buf, str)
+    issues = lintreport(buf, diagram)
     out = String(take!(buf))
     if input.dy > 0
         out = replace(out, r"^(\d+):(\d+):"m => m -> begin
@@ -89,15 +100,16 @@ function report(str, input)
 end
 
 function render_cmd(input, opts)
-    str = if input.scene
+    diagram = if input.scene
         try
-            render(input.name == "stdin" ? runscene(input.text, "stdin") : runscene(input.name))
+            input.name == "stdin" ? runscene(input.text, "stdin") : runscene(input.name)
         catch err
             return scene_error(input.name, err)
         end
     else
         input.text
     end
+    str = diagram isa Canvas ? render(diagram) : diagram
     out = get(opts, "-o", nothing)
     shown = get(opts, "--ruler", false) ? sprint(ruler, str) : str * "\n"
     if haskey(opts, "--locate")
@@ -109,7 +121,7 @@ function render_cmd(input, opts)
     else
         isnothing(out) ? print(shown) : write(out, shown)
     end
-    report(str, input)
+    report(str, diagram, input)
 end
 
 function import_cmd(input, opts)
